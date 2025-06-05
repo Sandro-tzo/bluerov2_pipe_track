@@ -1,0 +1,25 @@
+cmake_minimum_required(VERSION 3.5)
+project(bluerov2_pipe_track)
+
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
+
+# find dependencies
+find_package(ament_cmake_auto REQUIRED)
+ament_auto_find_build_dependencies()
+find_package(Eigen3 REQUIRED)
+
+if(NOT CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 17)
+  set(CMAKE_CXX_STANDARD_REQUIRED ON)
+endif()
+
+ament_auto_add_executable(hinf src/hinf.cpp)
+target_include_directories(hinf PUBLIC include ${EIGEN3_INCLUDE_DIRS})
+target_link_libraries(hinf ${auv_control_LIBRARIES}) 
+  
+install(DIRECTORY launch
+  DESTINATION share/${PROJECT_NAME})
+  
+ament_auto_package()
