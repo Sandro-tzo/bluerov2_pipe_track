@@ -22,7 +22,7 @@ target_include_directories(hinf PUBLIC include ${EIGEN3_INCLUDE_DIRS})
 target_link_libraries(hinf ${auv_control_LIBRARIES})
 target_link_libraries(image_saver ${OpenCV_LIBRARIES}) 
   
-install(DIRECTORY launch
+install(DIRECTORY launch urdf
   DESTINATION share/${PROJECT_NAME})
   
 ament_auto_package()
