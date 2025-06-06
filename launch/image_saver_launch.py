@@ -24,7 +24,7 @@ def generate_launch_description():
     # 3. Definisce il nodo da lanciare, passando gli argomenti come parametri
     sl.node(
         package='bluerov2_pipe_track',
-        executable='image_saver_node',
+        executable='image_saver',
         name='image_saver',
         output='screen',
         parameters={
