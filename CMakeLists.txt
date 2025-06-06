@@ -17,6 +17,7 @@ endif()
 
 ament_auto_add_executable(hinf src/hinf.cpp)
 ament_auto_add_executable(image_saver src/image_saver.cpp)
+ament_auto_add_executable(pipe_detector src/pipe_detector.cpp)
 target_include_directories(hinf PUBLIC include ${EIGEN3_INCLUDE_DIRS})
 target_link_libraries(hinf ${auv_control_LIBRARIES})
 target_link_libraries(image_saver ${OpenCV_LIBRARIES}) 
