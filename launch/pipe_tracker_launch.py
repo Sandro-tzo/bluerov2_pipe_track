@@ -25,7 +25,7 @@ def generate_launch_description():
         # Nodo Tracker Autonomo: ora sa che deve pubblicare setpoint nel frame 'world'
         sl.node(
             package='bluerov2_pipe_track',  # <<< USA IL NOME DEL TUO PACCHETTO
-            executable='pipe_ref',
+            executable='pipe_tracker',
             name='autonomous_tracker',
             output='screen',
             parameters=[
