@@ -81,8 +81,8 @@ public:
       // Log per debugging (opzionale, ma utile)
       // RCLCPP_INFO(this->get_logger(), "SE3 Error: [%.2f, %.2f, %.2f, %.2f, %.2f, %.2f]",
       //             se3_error(0), se3_error(1), se3_error(2), se3_error(3), se3_error(4), se3_error(5));
-      // RCLCPP_INFO(this->get_logger(), "Computed Wrench: [%.2f, %.2f, %.2f, %.2f, %.2f, %.2f]",
-      //             control_wrench(0), control_wrench(1), control_wrench(2), control_wrench(3), control_wrench(4), control_wrench(5));
+      RCLCPP_INFO(this->get_logger(), "Computed Wrench: [%.2f, %.2f, %.2f, %.2f, %.2f, %.2f]",
+                control_wrench(0), control_wrench(1), control_wrench(2), control_wrench(3), control_wrench(4), control_wrench(5));
 
       return control_wrench;
     }

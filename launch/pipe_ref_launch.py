@@ -44,7 +44,7 @@ def generate_launch_description():
         # Nodo Hinf Controller (nessuna modifica necessaria qui, i remapping sono generici)
         sl.node(
             package='bluerov2_pipe_track',
-            executable='hinf',
+            executable='hinf_int',
             name='hinf_controller',
             output='screen',
             remappings=[

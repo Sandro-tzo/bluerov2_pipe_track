@@ -16,7 +16,7 @@ def generate_launch_description():
 
         sl.node(
             package='bluerov2_pipe_track',  # <<< PACCHETTO del tuo HinfController
-            executable='hinf', # <<< ESEGUIBILE del tuo HinfController
+            executable='hinf_int', # <<< ESEGUIBILE del tuo HinfController
             name='hinf_controller',      # Nome del nodo ROS (quello che hai usato in ControllerIO("hinf_controller"))
             output='screen',
             remappings=[
@@ -24,7 +24,7 @@ def generate_launch_description():
                 # ControllerIO si aspetta '~/odom'. Se il nodo è '/bluerov2/hinf_controller',
                 # questo topic completo è '/bluerov2/hinf_controller/odom'.
                 # Lo mappiamo al topic di odometria pubblicato da Gazebo per il BlueROV2.
-                ('~/odom', '/bluerov2/odometry_plugin/odom'),
+                ('~/odom', '/bluerov2/odom'),
 
                 # Input Setpoint di Posa per HinfController:
                 # ControllerIO si aspetta '~/pose_setpoint' (cioè '/bluerov2/hinf_controller/pose_setpoint').

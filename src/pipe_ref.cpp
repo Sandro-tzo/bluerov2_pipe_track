@@ -35,9 +35,9 @@ public:
     this->declare_parameter<std::string>("world_frame_id", "world");
     this->declare_parameter<double>("depth_setpoint", -8.0);
     this->declare_parameter<double>("depth_tolerance", 0.5);
-    this->declare_parameter<double>("constant_forward_speed", 1.0);
-    this->declare_parameter<double>("yaw_correction_gain", 0.0001);
-    this->declare_parameter<double>("search_yaw_velocity", 0.5);
+    this->declare_parameter<double>("constant_forward_speed", 0.5);
+    this->declare_parameter<double>("yaw_correction_gain", 0.005);
+    this->declare_parameter<double>("search_yaw_velocity", 0.35);
     
     // Sottoscrizioni e Pubblicazioni
     auto sensor_qos = rclcpp::QoS(rclcpp::KeepLast(5)).best_effort();
@@ -101,7 +101,7 @@ private:
       cv::Moments M_near = cv::moments(roi_near);
       cv::Moments M_far = cv::moments(roi_far);
 
-      if (M_near.m00 > this->get_parameter("min_area").as_int() && M_far.m00 > this->get_parameter("min_area").as_int()) {
+      if (M_near.m00 > this->get_parameter("min_area").as_int()  /*&& M_far.m00 > this->get_parameter("min_area").as_int()*/) {
         target_found = true;
         
         cv::Point p_near(M_near.m10 / M_near.m00, M_near.m01 / M_near.m00 + height * 0.8);
