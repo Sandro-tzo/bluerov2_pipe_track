@@ -61,3 +61,5 @@ def generate_launch_description():
                    launch_arguments={'namespace': sl.arg('namespace'), 'use_sim_time': sl.sim_time})
 
     return sl.launch_description()
+
+    #ros2 service call /bluerov2/autonomous_tracker/trigger_return_home std_srvs/srv/Trigger '{}'

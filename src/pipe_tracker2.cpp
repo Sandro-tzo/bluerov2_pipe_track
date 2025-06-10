@@ -13,7 +13,6 @@
 #include <cmath>
 #include <vector>
 #include <algorithm>
-#include <std_srvs/srv/trigger.hpp>
 
 // Alias per i tipi di messaggio
 using ImageMsg = sensor_msgs::msg::Image;
@@ -21,11 +20,12 @@ using TwistStampedMsg = geometry_msgs::msg::TwistStamped;
 using PoseStampedMsg = geometry_msgs::msg::PoseStamped;
 using OdometryMsg = nav_msgs::msg::Odometry;
 
-// Macchina a stati
+// ++ NUOVO: Macchina a stati con stato iniziale DIVING
 enum class State {
     DIVING,
     SEARCHING,
     TRACKING,
+    CONFIRMING_END_OF_LINE,
     SURFACING,
     RETURNING_HOME,
     MISSION_COMPLETE
@@ -36,7 +36,7 @@ class AutonomousCylinderTracker : public rclcpp::Node
 public:
     AutonomousCylinderTracker() : Node("autonomous_cylinder_tracker")
     {
-        // Parametri
+        // Parametri...
         this->declare_parameter<std::string>("image_topic", "/bluerov2/image");
         this->declare_parameter<int>("hsv_v_low", 0);
         this->declare_parameter<int>("hsv_v_high", 50);
@@ -55,19 +55,25 @@ public:
         this->declare_parameter<double>("surface_depth_tolerance", 0.5);
         this->declare_parameter<double>("home_position_tolerance", 1.0);
         this->declare_parameter<double>("return_home_step_size_m", 1.5);
+        this->declare_parameter<double>("end_of_line_timeout_sec", 3.0);
 
-        // Sottoscrizioni, Pubblicazioni e Servizio
+        // Sottoscrizioni e Pubblicazioni...
         auto sensor_qos = rclcpp::QoS(rclcpp::KeepLast(5)).best_effort();
         auto command_qos = rclcpp::QoS(rclcpp::KeepLast(1)).reliable();
 
-        image_subscription_ = this->create_subscription<ImageMsg>(this->get_parameter("image_topic").as_string(), sensor_qos, std::bind(&AutonomousCylinderTracker::image_callback, this, std::placeholders::_1));
-        odom_subscription_ = this->create_subscription<OdometryMsg>(this->get_parameter("odom_topic").as_string(), 10, std::bind(&AutonomousCylinderTracker::odom_callback, this, std::placeholders::_1));
+        image_subscription_ = this->create_subscription<ImageMsg>(
+            this->get_parameter("image_topic").as_string(), sensor_qos,
+            std::bind(&AutonomousCylinderTracker::image_callback, this, std::placeholders::_1));
+
+        odom_subscription_ = this->create_subscription<OdometryMsg>(
+            this->get_parameter("odom_topic").as_string(), 10,
+            std::bind(&AutonomousCylinderTracker::odom_callback, this, std::placeholders::_1));
+
         processed_image_pub_ = this->create_publisher<ImageMsg>("/cylinder_tracker/processed_image", 10);
         velocity_pub_ = this->create_publisher<TwistStampedMsg>(this->get_parameter("velocity_setpoint_topic").as_string(), command_qos);
         pose_pub_ = this->create_publisher<PoseStampedMsg>(this->get_parameter("pose_setpoint_topic").as_string(), command_qos);
-        return_home_service_ = this->create_service<std_srvs::srv::Trigger>("~/trigger_return_home", std::bind(&AutonomousCylinderTracker::handle_return_home_trigger, this, std::placeholders::_1, std::placeholders::_2));
 
-        RCLCPP_INFO(this->get_logger(), "Tracker Supervisionato avviato. Stato iniziale: DIVING.");
+        RCLCPP_INFO(this->get_logger(), "Tracker Autonomo Robusto avviato. Stato iniziale: DIVING.");
     }
 
 private:
@@ -76,18 +82,19 @@ private:
     rclcpp::Publisher<ImageMsg>::SharedPtr processed_image_pub_;
     rclcpp::Publisher<TwistStampedMsg>::SharedPtr velocity_pub_;
     rclcpp::Publisher<PoseStampedMsg>::SharedPtr pose_pub_;
-    rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr return_home_service_;
-    
     std::optional<OdometryMsg> current_odometry_;
+    
     std::optional<geometry_msgs::msg::Point> initial_position_;
     std::optional<double> initial_yaw_;
 
+    // -- MODIFICATO: Lo stato iniziale ora è DIVING
     State current_state_ = State::DIVING;
-    bool target_found_ = false;
+    rclcpp::Time time_target_lost_;
 
     void odom_callback(const OdometryMsg::SharedPtr msg)
     {
         current_odometry_ = *msg;
+
         if (!initial_position_.has_value()) {
             initial_position_ = msg->pose.pose.position;
             tf2::Quaternion q;
@@ -103,27 +110,31 @@ private:
     void image_callback(const ImageMsg::SharedPtr msg)
     {
         if (!current_odometry_.has_value()) { return; }
-        
-        this->target_found_ = false;
+
+        bool target_found = false;
         int pixel_error = 0;
         cv_bridge::CvImagePtr cv_ptr;
 
-        if (current_state_ == State::SEARCHING || current_state_ == State::TRACKING) {
+        if (current_state_ == State::SEARCHING || current_state_ == State::TRACKING || current_state_ == State::CONFIRMING_END_OF_LINE) {
             try {
                 cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
                 cv::Mat &frame = cv_ptr->image;
                 int frame_width = frame.cols;
                 int frame_height = frame.rows;
+
                 cv::Mat hsv_frame, mask;
                 cv::cvtColor(frame, hsv_frame, cv::COLOR_BGR2HSV);
                 cv::Scalar lower_black(0, 0, this->get_parameter("hsv_v_low").as_int());
                 cv::Scalar upper_black(180, 255, this->get_parameter("hsv_v_high").as_int());
                 cv::inRange(hsv_frame, lower_black, upper_black, mask);
+                
                 std::vector<std::vector<cv::Point>> contours;
                 cv::findContours(mask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+                
                 double max_area = 0;
                 std::optional<std::vector<cv::Point>> largest_contour;
                 int min_area = this->get_parameter("min_area").as_int();
+
                 for (const auto& contour : contours) {
                     double area = cv::contourArea(contour);
                     if (area > min_area && area > max_area) {
@@ -131,6 +142,7 @@ private:
                         largest_contour = contour;
                     }
                 }
+                
                 if (largest_contour.has_value()) {
                     cv::Rect main_bbox = cv::boundingRect(largest_contour.value());
                     int roi_height = std::max(10, static_cast<int>(main_bbox.height * 0.25));
@@ -139,13 +151,14 @@ private:
                     cv::Mat bottom_mask_roi = mask(bottom_roi_rect);
                     std::vector<std::vector<cv::Point>> bottom_contours;
                     cv::findContours(bottom_mask_roi, bottom_contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+
                     if (!bottom_contours.empty()) {
                         std::vector<cv::Point> all_bottom_points;
                         for(const auto& c : bottom_contours) {
                             all_bottom_points.insert(all_bottom_points.end(), c.begin(), c.end());
                         }
                         if (!all_bottom_points.empty()) {
-                            this->target_found_ = true;
+                            target_found = true;
                             cv::Rect final_bbox = cv::boundingRect(all_bottom_points);
                             final_bbox.x += bottom_roi_rect.x;
                             final_bbox.y += bottom_roi_rect.y;
@@ -165,8 +178,8 @@ private:
                 return;
             }
         }
-        
-        update_state();
+
+        update_state(target_found);
         publish_pose_setpoint(pixel_error);
         publish_velocity_setpoint();
         
@@ -174,13 +187,14 @@ private:
             processed_image_pub_->publish(*cv_ptr->toImageMsg());
         }
     }
-
-    void update_state()
-    {
+    
+    // -- MODIFICATO: Logica di stato con il nuovo stato iniziale DIVING
+    void update_state(bool target_is_visible) {
         if (!current_odometry_.has_value() || !initial_position_.has_value()) return;
 
         switch (current_state_) {
-            case State::DIVING: {
+            case State::DIVING:
+            {
                 bool at_target_depth = std::abs(current_odometry_->pose.pose.position.z - this->get_parameter("depth_setpoint").as_double()) 
                                        < this->get_parameter("depth_tolerance").as_double();
                 if (at_target_depth) {
@@ -189,19 +203,37 @@ private:
                 }
                 break;
             }
+
             case State::SEARCHING:
-                if (this->target_found_) {
+                if (target_is_visible) {
                     current_state_ = State::TRACKING;
                     RCLCPP_INFO(this->get_logger(), "Target trovato -> TRACKING");
                 }
                 break;
+
             case State::TRACKING:
-                if (!this->target_found_) {
-                    current_state_ = State::SEARCHING;
-                    RCLCPP_WARN(this->get_logger(), "Target perso durante il tracking -> SEARCHING");
+                if (!target_is_visible) {
+                    current_state_ = State::CONFIRMING_END_OF_LINE;
+                    time_target_lost_ = this->get_clock()->now();
+                    RCLCPP_WARN(this->get_logger(), "Target perso! -> CONFIRMING_END_OF_LINE (attendo %.1fs...)", this->get_parameter("end_of_line_timeout_sec").as_double());
                 }
                 break;
-            case State::SURFACING: {
+
+            case State::CONFIRMING_END_OF_LINE:
+                if (target_is_visible) {
+                    current_state_ = State::TRACKING;
+                    RCLCPP_INFO(this->get_logger(), "Target ritrovato -> TRACKING");
+                } else {
+                    auto timeout = rclcpp::Duration::from_seconds(this->get_parameter("end_of_line_timeout_sec").as_double());
+                    if (this->get_clock()->now() - time_target_lost_ > timeout) {
+                        current_state_ = State::SURFACING;
+                        RCLCPP_WARN(this->get_logger(), "Timeout scaduto. Fine linea confermata -> SURFACING");
+                    }
+                }
+                break;
+
+            case State::SURFACING:
+            {
                 bool at_surface = std::abs(current_odometry_->pose.pose.position.z - this->get_parameter("surface_depth").as_double()) 
                                   < this->get_parameter("surface_depth_tolerance").as_double();
                 if (at_surface) {
@@ -210,7 +242,9 @@ private:
                 }
                 break;
             }
-            case State::RETURNING_HOME: {
+
+            case State::RETURNING_HOME:
+            {
                 double dx = initial_position_->x - current_odometry_->pose.pose.position.x;
                 double dy = initial_position_->y - current_odometry_->pose.pose.position.y;
                 double distance_to_home = std::sqrt(dx*dx + dy*dy);
@@ -220,42 +254,32 @@ private:
                 }
                 break;
             }
+
             case State::MISSION_COMPLETE:
                 break;
-        }
-    }
-
-    void handle_return_home_trigger(
-        const std::shared_ptr<std_srvs::srv::Trigger::Request> request,
-        std::shared_ptr<std_srvs::srv::Trigger::Response> response)
-    {
-        (void)request;
-        if (current_state_ == State::SEARCHING || current_state_ == State::TRACKING) {
-            RCLCPP_WARN(this->get_logger(), "Comando esterno ricevuto! Avvio sequenza di ritorno a casa.");
-            current_state_ = State::SURFACING;
-            response->success = true;
-            response->message = "Return to home sequence initiated.";
-        } else {
-            RCLCPP_ERROR(this->get_logger(), "Impossibile avviare il ritorno a casa, il robot non è in stato SEARCHING o TRACKING.");
-            response->success = false;
-            response->message = "Cannot initiate return, robot not in an active mission state.";
         }
     }
 
     void publish_pose_setpoint(int pixel_err)
     {
         if (!current_odometry_ || !initial_position_) return;
+
         auto pose_msg = std::make_unique<PoseStampedMsg>();
         pose_msg->header.stamp = this->get_clock()->now();
         pose_msg->header.frame_id = this->get_parameter("world_frame_id").as_string();
+
         tf2::Quaternion current_q;
         tf2::fromMsg(current_odometry_->pose.pose.orientation, current_q);
         double roll, pitch, current_yaw;
         tf2::Matrix3x3(current_q).getRPY(roll, pitch, current_yaw);
+
         pose_msg->pose.position = current_odometry_->pose.pose.position;
         pose_msg->pose.orientation = current_odometry_->pose.pose.orientation;
+
         switch (current_state_) {
-            case State::DIVING: {
+            // ++ NUOVO: Comportamento per lo stato DIVING
+            case State::DIVING:
+            {
                 pose_msg->pose.position.x = initial_position_->x;
                 pose_msg->pose.position.y = initial_position_->y;
                 pose_msg->pose.position.z = this->get_parameter("depth_setpoint").as_double();
@@ -265,10 +289,11 @@ private:
                 break;
             }
             case State::SEARCHING:
-            case State::TRACKING: {
+            case State::TRACKING:
+            {
                 pose_msg->pose.position.z = this->get_parameter("depth_setpoint").as_double();
                 double target_yaw = current_yaw;
-                if (current_state_ == State::TRACKING && this->target_found_) {
+                if (current_state_ == State::TRACKING) {
                     target_yaw += this->get_parameter("yaw_correction_gain").as_double() * pixel_err;
                 }
                 tf2::Quaternion q;
@@ -276,18 +301,24 @@ private:
                 pose_msg->pose.orientation = tf2::toMsg(q);
                 break;
             }
-            case State::SURFACING: {
+            case State::CONFIRMING_END_OF_LINE:
+                break;
+
+            case State::SURFACING:
+            {
                 pose_msg->pose.position.z = this->get_parameter("surface_depth").as_double();
                 tf2::Quaternion q_surf;
                 q_surf.setRPY(0.0, 0.0, initial_yaw_.value());
                 pose_msg->pose.orientation = tf2::toMsg(q_surf);
                 break;
             }
-            case State::RETURNING_HOME: {
+            case State::RETURNING_HOME:
+            {
                 double dx = initial_position_->x - current_odometry_->pose.pose.position.x;
                 double dy = initial_position_->y - current_odometry_->pose.pose.position.y;
                 double distance_to_home = std::sqrt(dx*dx + dy*dy);
                 double return_step_size = this->get_parameter("return_home_step_size_m").as_double();
+                
                 geometry_msgs::msg::Point target_position;
                 if (distance_to_home > return_step_size) {
                     target_position.x = current_odometry_->pose.pose.position.x + (dx / distance_to_home) * return_step_size;
@@ -298,13 +329,15 @@ private:
                 }
                 target_position.z = this->get_parameter("surface_depth").as_double();
                 pose_msg->pose.position = target_position;
+                
                 double yaw_to_home = std::atan2(dy, dx);
                 tf2::Quaternion q_home;
                 q_home.setRPY(0.0, 0.0, yaw_to_home);
                 pose_msg->pose.orientation = tf2::toMsg(q_home);
                 break;
             }
-            case State::MISSION_COMPLETE: {
+            case State::MISSION_COMPLETE:
+            {
                 pose_msg->pose.position = initial_position_.value();
                 tf2::Quaternion q_final;
                 q_final.setRPY(0.0, 0.0, initial_yaw_.value());
@@ -312,25 +345,33 @@ private:
                 break;
             }
         }
+
         pose_pub_->publish(std::move(pose_msg));
     }
-    
+
+    // -- MODIFICATO: La velocità è zero durante la discesa (DIVING)
     void publish_velocity_setpoint()
     {
         auto twist_msg = std::make_unique<TwistStampedMsg>();
         twist_msg->header.stamp = this->get_clock()->now();
         twist_msg->header.frame_id = this->get_parameter("robot_frame_id").as_string();
+
         twist_msg->twist.linear.x = 0.0;
         twist_msg->twist.angular.z = 0.0;
         twist_msg->twist.linear.y = 0.0;
         twist_msg->twist.linear.z = 0.0;
         twist_msg->twist.angular.x = 0.0;
         twist_msg->twist.angular.y = 0.0;
-        if (current_odometry_ && current_state_ != State::MISSION_COMPLETE && current_state_ != State::DIVING) {
+
+        if (current_odometry_ && current_state_ != State::MISSION_COMPLETE && current_state_ != State::DIVING)
+        {
+            // Eseguiamo i comandi di velocità solo se non siamo nella fase di discesa iniziale
             if (current_state_ == State::SEARCHING) {
                 twist_msg->twist.angular.z = this->get_parameter("search_yaw_velocity").as_double();
-            } else if (current_state_ == State::TRACKING && this->target_found_) {
+            } else if (current_state_ == State::TRACKING) {
                 twist_msg->twist.linear.x = this->get_parameter("constant_forward_speed").as_double();
+            } else if (current_state_ == State::CONFIRMING_END_OF_LINE) {
+                twist_msg->twist.angular.z = this->get_parameter("search_yaw_velocity").as_double();
             }
         }
         

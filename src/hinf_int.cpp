@@ -93,8 +93,8 @@ public:
     control_wrench = control_wrench.cwiseMax(-wrench_saturation_limits_).cwiseMin(wrench_saturation_limits_);
 
     // Log per debugging
-    RCLCPP_INFO(this->get_logger(), "Saturated Wrench: [%.2f, %.2f, %.2f, %.2f, %.2f, %.2f]",
-               control_wrench(0), control_wrench(1), control_wrench(2), control_wrench(3), control_wrench(4), control_wrench(5));
+    //RCLCPP_INFO(this->get_logger(), "Saturated Wrench: [%.2f, %.2f, %.2f, %.2f, %.2f, %.2f]",
+      //         control_wrench(0), control_wrench(1), control_wrench(2), control_wrench(3), control_wrench(4), control_wrench(5));
 
     return control_wrench;
   }
