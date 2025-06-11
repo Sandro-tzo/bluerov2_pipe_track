@@ -21,6 +21,7 @@ ament_auto_add_executable(image_saver src/image_saver.cpp)
 ament_auto_add_executable(pipe_detector src/pipe_detector.cpp)
 ament_auto_add_executable(pipe_tracker src/pipe_tracker.cpp)
 ament_auto_add_executable(odom_to_tf src/odom_to_tf.cpp)
+ament_auto_add_executable(odom_to_dvl src/odom_to_dvl.cpp)
 target_include_directories(hinf PUBLIC include ${EIGEN3_INCLUDE_DIRS})
 target_include_directories(hinf_int PUBLIC include ${EIGEN3_INCLUDE_DIRS})
 target_link_libraries(hinf ${auv_control_LIBRARIES})
@@ -29,5 +30,9 @@ target_link_libraries(image_saver ${OpenCV_LIBRARIES})
   
 install(DIRECTORY launch urdf
   DESTINATION share/${PROJECT_NAME})
-  
+
+install(TARGETS odom_to_dvl
+  DESTINATION lib/${PROJECT_NAME}
+)
+
 ament_auto_package()
