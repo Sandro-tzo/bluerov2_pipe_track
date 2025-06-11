@@ -33,6 +33,20 @@ def generate_launch_description():
             }]
         )
         
+        # ++ SINTASSI CORRETTA ++
+        sl.node(
+            # ... (package, executable, name sono invariati)
+            package='bluerov2_pipe_track', 
+            executable='ukf',
+            name='ukf_filter_node',
+            
+            remappings={
+                # SINTASSI CORRETTA: 'nome_interno_al_nodo': 'nome_reale_nel_sistema'
+                'imu/data': '/bluerov2/mpu',  # NOTA: Ho usato /mpu come nel tuo messaggio di errore e rimosso lo / finale
+                'dvl/twist': '/bluerov2/dvl/twist'
+            }
+        )
+        
     return sl.launch_description()
 
 # Corrente di circa 0.3 m/s con una leggera deviazione sull'asse Y
