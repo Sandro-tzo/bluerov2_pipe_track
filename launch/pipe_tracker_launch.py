@@ -8,7 +8,7 @@ def generate_launch_description():
     sl.declare_arg('namespace', default_value='bluerov2')
     sl.declare_arg('rviz', default_value=True)
 
-    with sl.group(ns=sl.arg('namespace')):
+    with sl.group(ns='bluerov2'):
 
         # Nodo Odom->TF: ora sa che il frame genitore è 'world'
         sl.node(

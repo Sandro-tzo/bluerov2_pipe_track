@@ -62,7 +62,7 @@ public:
 
         image_subscription_ = this->create_subscription<ImageMsg>(this->get_parameter("image_topic").as_string(), sensor_qos, std::bind(&AutonomousCylinderTracker::image_callback, this, std::placeholders::_1));
         odom_subscription_ = this->create_subscription<OdometryMsg>(this->get_parameter("odom_topic").as_string(), 10, std::bind(&AutonomousCylinderTracker::odom_callback, this, std::placeholders::_1));
-        processed_image_pub_ = this->create_publisher<ImageMsg>("/cylinder_tracker/processed_image", 10);
+        processed_image_pub_ = this->create_publisher<ImageMsg>("processed_image", 10);
         velocity_pub_ = this->create_publisher<TwistStampedMsg>(this->get_parameter("velocity_setpoint_topic").as_string(), command_qos);
         pose_pub_ = this->create_publisher<PoseStampedMsg>(this->get_parameter("pose_setpoint_topic").as_string(), command_qos);
         return_home_service_ = this->create_service<std_srvs::srv::Trigger>("~/trigger_return_home", std::bind(&AutonomousCylinderTracker::handle_return_home_trigger, this, std::placeholders::_1, std::placeholders::_2));

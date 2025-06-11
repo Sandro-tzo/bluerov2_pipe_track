@@ -22,14 +22,16 @@ def generate_launch_description():
     with sl.group(if_arg='spawn'):
         sl.include('bluerov2_description', 'upload_bluerov2_launch.py')
 
-    sl.node(
-        package='bluerov2_pipe_track',
-        executable='odom_to_dvl',
-        name='odom_to_dvl_node',
-        parameters=[{
-            'noise_std_dev': 0.05
-        }]
-    )
+    with sl.group(ns='bluerov2'):
+
+        sl.node(
+            package='bluerov2_pipe_track',
+            executable='odom_to_dvl',
+            name='odom_to_dvl_node',
+            parameters=[{
+                'noise_std_dev': 0.05
+            }]
+        )
         
     return sl.launch_description()
 

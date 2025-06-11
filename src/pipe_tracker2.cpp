@@ -69,7 +69,7 @@ public:
             this->get_parameter("odom_topic").as_string(), 10,
             std::bind(&AutonomousCylinderTracker::odom_callback, this, std::placeholders::_1));
 
-        processed_image_pub_ = this->create_publisher<ImageMsg>("/cylinder_tracker/processed_image", 10);
+        processed_image_pub_ = this->create_publisher<ImageMsg>("processed_image", 10);
         velocity_pub_ = this->create_publisher<TwistStampedMsg>(this->get_parameter("velocity_setpoint_topic").as_string(), command_qos);
         pose_pub_ = this->create_publisher<PoseStampedMsg>(this->get_parameter("pose_setpoint_topic").as_string(), command_qos);
 
