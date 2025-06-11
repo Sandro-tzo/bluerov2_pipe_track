@@ -23,3 +23,6 @@ def generate_launch_description():
         sl.include('bluerov2_description', 'upload_bluerov2_launch.py')
         
     return sl.launch_description()
+
+# Corrente di circa 0.3 m/s con una leggera deviazione sull'asse Y
+#ros2 topic pub --once /ocean_current geometry_msgs/msg/Vector3 '{x: 0.25, y: 0.15, z: 0.0}'
