@@ -38,7 +38,7 @@ def generate_launch_description():
             # ... (package, executable, name sono invariati)
             package='bluerov2_pipe_track', 
             executable='ukf',
-            name='ukf_filter_node',
+            name='ukf_node',
             
             remappings={
                 # SINTASSI CORRETTA: 'nome_interno_al_nodo': 'nome_reale_nel_sistema'
