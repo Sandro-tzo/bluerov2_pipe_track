@@ -31,8 +31,4 @@ target_link_libraries(image_saver ${OpenCV_LIBRARIES})
 install(DIRECTORY launch urdf
   DESTINATION share/${PROJECT_NAME})
 
-install(TARGETS odom_to_dvl
-  DESTINATION lib/${PROJECT_NAME}
-)
-
 ament_auto_package()
