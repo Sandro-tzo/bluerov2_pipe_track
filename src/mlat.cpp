@@ -1,85 +1,81 @@
 #include <rclcpp/rclcpp.hpp>
-#include <nav_msgs/msg/odometry.hpp>
-// --- MODIFICA 1: Includere il tipo di messaggio corretto ---
 #include <geometry_msgs/msg/pose_with_covariance_stamped.hpp>
+#include <nav_msgs/msg/odometry.hpp> // Includiamo l'odometria per prendere la posizione reale
 #include <random>
 #include <functional>
 
 class MlatNode : public rclcpp::Node
 {
 public:
-  MlatNode();
+  MlatNode() : Node("mlat_node")
+  {
+    this->declare_parameter<double>("noise_std_dev", 0.15);
+    this->get_parameter("noise_std_dev", noise_std_dev_);
+
+    // Inizializziamo il generatore di rumore
+    normal_distribution_ = std::normal_distribution<double>(0.0, noise_std_dev_);
+
+    // Creiamo il publisher per la nostra posa simulata
+    publisher_ = this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("/bluerov2/mlat", 10);
+
+    // Ci iscriviamo all'odometria di Gazebo per avere la posizione di ground truth da "sporcare"
+    subscription_ = this->create_subscription<nav_msgs::msg::Odometry>(
+      "/bluerov2/odom", 10, std::bind(&MlatNode::odom_callback, this, std::placeholders::_1));
+
+    RCLCPP_INFO(this->get_logger(), "Nodo 'mlat_node' avviato. Pubblica PoseWithCovarianceStamped nel frame 'map'.");
+  }
 
 private:
-  void odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg);
+  void odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg)
+  {
+    auto pose_msg = geometry_msgs::msg::PoseWithCovarianceStamped();
 
-  rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr subscription_;
-  // --- MODIFICA 2: Cambiare il tipo del publisher ---
+    // --- Header ---
+    // ========================================================================= //
+    // --- MODIFICA CRITICA PER LA SINCRONIZZAZIONE ---
+    // Invece di usare l'ora corrente, preserviamo il timestamp del messaggio
+    // originale del simulatore. Questo sincronizza tutti i dati.
+    pose_msg.header.stamp = msg->header.stamp;
+    // ========================================================================= //
+
+    // Il dato di posizione assoluta è nel frame globale 'map'
+    pose_msg.header.frame_id = "map"; 
+
+    // --- Pose: Position ---
+    // Prendiamo la posizione reale e aggiungiamo rumore
+    pose_msg.pose.pose.position.x = msg->pose.pose.position.x + normal_distribution_(random_generator_);
+    pose_msg.pose.pose.position.y = msg->pose.pose.position.y + normal_distribution_(random_generator_);
+    pose_msg.pose.pose.position.z = msg->pose.pose.position.z + normal_distribution_(random_generator_);
+
+    // --- Pose: Orientation ---
+    // Impostiamo esplicitamente un quaternione identità (w=1), che significa "nessuna rotazione".
+    pose_msg.pose.pose.orientation.x = 0.0;
+    pose_msg.pose.pose.orientation.y = 0.0;
+    pose_msg.pose.pose.orientation.z = 0.0;
+    pose_msg.pose.pose.orientation.w = 1.0;
+
+    // --- Covariance ---
+    // Impostiamo una matrice di covarianza realistica.
+    std::fill(pose_msg.pose.covariance.begin(), pose_msg.pose.covariance.end(), 0.0);
+    double position_variance = noise_std_dev_ * noise_std_dev_;
+    
+    pose_msg.pose.covariance[0] = position_variance;  // Varianza X
+    pose_msg.pose.covariance[7] = position_variance;  // Varianza Y
+    pose_msg.pose.covariance[14] = position_variance; // Varianza Z
+    pose_msg.pose.covariance[21] = 9999.0;             // Varianza Roll (altissima)
+    pose_msg.pose.covariance[28] = 9999.0;             // Varianza Pitch (altissima)
+    pose_msg.pose.covariance[35] = 9999.0;             // Varianza Yaw (altissima)
+
+    publisher_->publish(pose_msg);
+  }
+
   rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr publisher_;
+  rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr subscription_;
   
   double noise_std_dev_;
-  
   std::default_random_engine random_generator_;
   std::normal_distribution<double> normal_distribution_;
 };
-
-using std::placeholders::_1;
-
-MlatNode::MlatNode()
-: Node("mlat_node")
-{
-  this->declare_parameter<double>("noise_std_dev", 0.1);
-  this->get_parameter("noise_std_dev", noise_std_dev_);
-
-  normal_distribution_ = std::normal_distribution<double>(0.0, noise_std_dev_);
-
-  subscription_ = this->create_subscription<nav_msgs::msg::Odometry>(
-    "/bluerov2/odom", 10, std::bind(&MlatNode::odom_callback, this, _1));
-    
-  // --- MODIFICA 3: Creare il publisher con il nuovo tipo ---
-  publisher_ = this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>(
-    "/bluerov2/mlat", 10);
-
-  RCLCPP_INFO(this->get_logger(), "Nodo 'mlat_node' avviato. Pubblica PoseWithCovarianceStamped.");
-}
-
-void MlatNode::odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg)
-{
-  // --- MODIFICA 4: Creare il messaggio del tipo corretto ---
-  auto mlat_pose_msg = geometry_msgs::msg::PoseWithCovarianceStamped();
-
-  // L'header rimane lo stesso
-  mlat_pose_msg.header = msg->header;
-  // Per sicurezza, assicuriamoci che il frame_id sia quello che il filtro si aspetta
-  mlat_pose_msg.header.frame_id = "odom";
-
-  // La posa ora è dentro un campo "pose"
-  const auto& odom_pose = msg->pose.pose;
-  mlat_pose_msg.pose.pose.position.x = odom_pose.position.x + normal_distribution_(random_generator_);
-  mlat_pose_msg.pose.pose.position.y = odom_pose.position.y + normal_distribution_(random_generator_);
-  mlat_pose_msg.pose.pose.position.z = odom_pose.position.z + normal_distribution_(random_generator_);
-  mlat_pose_msg.pose.pose.orientation = odom_pose.orientation;
-
-  // --- MODIFICA 5: Aggiungere la covarianza ---
-  // La covarianza è una matrice 6x6 in forma di array [36].
-  // Gli elementi sulla diagonale sono le varianze di [x, y, z, roll, pitch, yaw].
-  double variance = noise_std_dev_ * noise_std_dev_;
-  
-  // Varianza per X (posizione 0)
-  mlat_pose_msg.pose.covariance[0] = variance;
-  // Varianza per Y (posizione 7)
-  mlat_pose_msg.pose.covariance[7] = variance;
-  // Varianza per Z (posizione 14)
-  mlat_pose_msg.pose.covariance[14] = variance;
-
-  // Non abbiamo informazioni sull'orientamento, quindi impostiamo la loro
-  // varianza a un valore altissimo per dire al filtro di ignorarle.
-  mlat_pose_msg.pose.covariance[21] = 9999.0; // Roll
-  mlat_pose_msg.pose.covariance[28] = 9999.0; // Pitch
-  mlat_pose_msg.pose.covariance[35] = 9999.0; // Yaw
-
-  publisher_->publish(mlat_pose_msg);
-}
 
 int main(int argc, char * argv[])
 {

@@ -1,8 +1,17 @@
 #include <rclcpp/rclcpp.hpp>
 #include <nav_msgs/msg/odometry.hpp>
 #include <geometry_msgs/msg/twist_with_covariance_stamped.hpp>
-#include <random>
+#include <algorithm> // Per std::fill
 #include <functional>
+
+/*
+ * Questo nodo si sottoscrive a un topic di odometria (/odom),
+ * estrae le informazioni sulla velocità e le ripubblica come
+ * messaggio TwistWithCovarianceStamped, simulando l'output di un DVL.
+ * La matrice di covarianza viene impostata manualmente per riflettere
+ * l'alta precisione sulle velocità lineari e la totale incertezza
+ * su quelle angolari.
+ */
 
 class OdomToDvlNode : public rclcpp::Node
 {
@@ -14,11 +23,6 @@ private:
 
   rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr subscription_;
   rclcpp::Publisher<geometry_msgs::msg::TwistWithCovarianceStamped>::SharedPtr publisher_;
-  
-  double noise_std_dev_;
-  
-  std::default_random_engine random_generator_;
-  std::normal_distribution<double> normal_distribution_;
 };
 
 using std::placeholders::_1;
@@ -27,36 +31,46 @@ using std::placeholders::_1;
 OdomToDvlNode::OdomToDvlNode()
 : Node("odom_to_dvl_node")
 {
-  this->declare_parameter<double>("noise_std_dev", 0.05);
-  this->get_parameter("noise_std_dev", noise_std_dev_);
-
-  normal_distribution_ = std::normal_distribution<double>(0.0, noise_std_dev_);
-
   subscription_ = this->create_subscription<nav_msgs::msg::Odometry>(
-    "/bluerov2/odom", 10, std::bind(&OdomToDvlNode::odom_callback, this, _1));
+    "odom", 10, std::bind(&OdomToDvlNode::odom_callback, this, _1));
     
   publisher_ = this->create_publisher<geometry_msgs::msg::TwistWithCovarianceStamped>(
-    "/bluerov2/dvl/twist", 10);
+    "/bluerov2/dvl", 10);
 
-  RCLCPP_INFO(this->get_logger(), "Nodo odom_to_dvl avviato. Rumore (std dev): %f", noise_std_dev_);
+  RCLCPP_INFO(this->get_logger(), "Nodo odom_to_dvl avviato.");
+  RCLCPP_INFO(this->get_logger(), "Sottoscritto a /odom, pubblica su /bluerov2/dvl");
 }
 
 void OdomToDvlNode::odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg)
 {
   auto dvl_twist_msg = geometry_msgs::msg::TwistWithCovarianceStamped();
 
-  dvl_twist_msg.header.stamp = msg->header.stamp;
-  dvl_twist_msg.header.frame_id = "dvl_link";
+  // --- Header ---
+  // ========================================================================= //
+  // --- MODIFICA CRITICA PER LA SINCRONIZZAZIONE E LA COERENZA ---
+  // 1. Preserviamo il timestamp del messaggio originale del simulatore.
+  // 2. Forziamo il frame_id a "base_link" per essere sicuri che sia sempre corretto.
+  // ========================================================================= //
+  dvl_twist_msg.header.stamp = msg->header.stamp; 
+  dvl_twist_msg.header.frame_id = "bluerov2/base_link"; 
 
-  const auto& odom_twist = msg->twist.twist.linear;
-  dvl_twist_msg.twist.twist.linear.x = odom_twist.x + normal_distribution_(random_generator_);
-  dvl_twist_msg.twist.twist.linear.y = odom_twist.y + normal_distribution_(random_generator_);
-  dvl_twist_msg.twist.twist.linear.z = odom_twist.z + normal_distribution_(random_generator_);
+  // --- Twist (Velocità) ---
+  // Copiamo solo la parte lineare e azzeriamo quella angolare
+  // per prevenire conflitti con l'IMU.
+  dvl_twist_msg.twist.twist.linear = msg->twist.twist.linear;
+  dvl_twist_msg.twist.twist.angular.x = 0.0;
+  dvl_twist_msg.twist.twist.angular.y = 0.0;
+  dvl_twist_msg.twist.twist.angular.z = 0.0;
+  
+  // --- Covariance (Incertezza) ---
+  std::fill(dvl_twist_msg.twist.covariance.begin(), dvl_twist_msg.twist.covariance.end(), 0.0);
 
-  double variance = noise_std_dev_ * noise_std_dev_;
-  dvl_twist_msg.twist.covariance[0] = variance;
-  dvl_twist_msg.twist.covariance[7] = variance;
-  dvl_twist_msg.twist.covariance[14] = variance;
+  // Varianza BASSISSIMA per le velocità LINEARI (vx, vy, vz)
+  dvl_twist_msg.twist.covariance[0]  = 1e-6;
+  dvl_twist_msg.twist.covariance[7]  = 1e-6;
+  dvl_twist_msg.twist.covariance[14] = 1e-6;
+  
+  // Varianza ALTISSIMA per le velocità ANGOLARI (wx, wy, wz)
   dvl_twist_msg.twist.covariance[21] = 9999.0;
   dvl_twist_msg.twist.covariance[28] = 9999.0;
   dvl_twist_msg.twist.covariance[35] = 9999.0;

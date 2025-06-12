@@ -1,0 +1,69 @@
+# ukf_ODOMETRY_STABLE.yaml (con Process Noise sintonizzato per la stabilità)
+ukf_filter_node:
+  ros__parameters:
+
+    frequency: 20.0
+    sensor_timeout: 0.2
+    transform_timeout: 0.2
+    two_d_mode: false
+    publish_tf: true
+
+    map_frame: map
+    odom_frame: odom
+    base_link_frame: bluerov2/base_link
+    world_frame: odom
+
+    # --- SENSORI ---
+    imu0: /bluerov2/mpu
+    imu0_config: [false, false, false, true,  true,  false, false, false, false, true,  true,  true, false, false, false]
+    imu0_relative: false
+    imu0_queue_size: 10
+
+    imu1: /bluerov2/lsm
+    imu1_config: [false, false, false, false, false, false, false, false, false, true,  true,  true, false, false, false]
+    imu1_relative: true
+    imu1_queue_size: 10
+
+    twist0: /bluerov2/dvl
+    twist0_config: [false, false, false, false, false, false, true, true, true, false, false, false, false, false, false]
+    twist0_relative: true
+    twist0_queue_size: 10
+
+    # --- COVARIANZE SENSORI ---
+    imu0_pose_covariance: [
+      999.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 999.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 999.0, 0.0, 0.0, 0.0,
+      0.0, 0.0, 0.0, 0.02, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.02, 0.0, 0.0, 0.0, 0.0, 0.0, 999.0]
+    imu0_twist_covariance: [
+      999.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 999.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 999.0, 0.0, 0.0, 0.0,
+      0.0, 0.0, 0.0, 0.01, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.01, 0.0, 0.0, 0.0, 0.0, 0.0, 0.01]
+    imu1_pose_covariance: [
+      999.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 999.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 999.0, 0.0, 0.0, 0.0,
+      0.0, 0.0, 0.0, 999.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 999.0, 0.0, 0.0, 0.0, 0.0, 0.0, 999.0]
+    imu1_twist_covariance: [
+      999.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 999.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 999.0, 0.0, 0.0, 0.0,
+      0.0, 0.0, 0.0, 0.01, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.01, 0.0, 0.0, 0.0, 0.0, 0.0, 0.01]
+    twist0_covariance: [
+      0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 0.0, 0.0, 0.0,
+      0.0, 0.0, 0.0, 999.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 999.0, 0.0, 0.0, 0.0, 0.0, 0.0, 999.0]
+
+    # --- MATRICE DI RUMORE DI PROCESSO SINTONIZZATA ---
+    # --- MATRICE DI RUMORE DI PROCESSO SINTONIZZATA PER LA VELOCITÀ Z ---
+    # Aggiungiamo rumore direttamente alle velocità per permettere al DVL
+    # di correggerle efficacemente.
+    process_noise_covariance: [
+      0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,    0.0,    0.0,    0.0,   0.0,   0.0,   0.0,    0.0,    0.0,
+      0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,    0.0,    0.0,    0.0,   0.0,   0.0,   0.0,    0.0,    0.0,
+      0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,    0.0,    0.0,    0.0,   0.0,   0.0,   0.0,    0.0,    0.0,
+      0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,    0.0,    0.0,    0.0,   0.0,   0.0,   0.0,    0.0,    0.0,
+      0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,    0.0,    0.0,    0.0,   0.0,   0.0,   0.0,    0.0,    0.0,
+      0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,    0.0,    0.0,    0.0,   0.0,   0.0,   0.0,    0.0,    0.0,
+      0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.05,   0.0,    0.0,    0.0,   0.0,   0.0,   0.0,    0.0,    0.0,   # Rumore per Vx
+      0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,    0.05,   0.0,    0.0,   0.0,   0.0,   0.0,    0.0,    0.0,   # Rumore per Vy
+      0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,    0.0,    0.05,   0.0,   0.0,   0.0,   0.0,    0.0,    0.0,   # Rumore per Vz
+      0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,    0.0,    0.0,    0.02,  0.0,   0.0,   0.0,    0.0,    0.0,   # Rumore per Vroll
+      0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,    0.0,    0.0,    0.0,   0.02,  0.0,   0.0,    0.0,    0.0,   # Rumore per Vpitch
+      0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,    0.0,    0.0,    0.0,   0.0,   0.04,  0.0,    0.0,    0.0,   # Rumore per Vyaw
+      0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,    0.0,    0.0,    0.0,   0.0,   0.0,   0.01,   0.0,    0.0,
+      0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,    0.0,    0.0,    0.0,   0.0,   0.0,   0.0,    0.01,   0.0,
+      0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,    0.0,    0.0,    0.0,   0.0,   0.0,   0.0,    0.0,    0.01
+    ]
