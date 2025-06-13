@@ -2,90 +2,82 @@ import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch_ros.actions import Node
+import yaml # Assicurati di avere questo import
 
 def generate_launch_description():
     
     pkg_name = 'bluerov2_pipe_track'
+    common_namespace = 'bluerov2'
     
-    # Percorso al tuo file di configurazione YAML.
-    # Assicurati che questo file usi 'bluerov2/base_link' come base_link_frame.
+    # Percorso al file di configurazione YAML
     config_file = os.path.join(
         get_package_share_directory(pkg_name),
         'config',
         'ukf_bluerov.yaml'
     )
 
-    # Parametro comune per usare il tempo di simulazione
-    use_sim_time_param = {'use_sim_time': True}
-
-    # --- Nodi Simulatori C++ ---
-    # Questi nodi vengono lanciati INSIEME al filtro.
+    # --- FASE 1: Carichiamo il file YAML e prepariamo un unico dizionario di parametri ---
+    with open(config_file, 'r') as f:
+        # Carica la struttura YAML e prendi solo la sezione dei parametri per il nostro nodo
+        params = yaml.safe_load(f)['ukf_node']['ros__parameters']
     
-    # Il tuo nodo che simula un DVL
-    odom_to_dvl_node = Node(
+    # --- FASE 2: Aggiungiamo il parametro 'use_sim_time' direttamente al dizionario ---
+    params['use_sim_time'] = True
+
+    # --- Nodi Simulatori (invariati) ---
+    dvl_node = Node(
         package=pkg_name,
         executable='odom_to_dvl',
-        name='odom_to_dvl_node',
-        parameters=[use_sim_time_param],
-        remappings=[
-            ('odom', '/bluerov2/odom')
-        ]
+        name='dvl_node',
+        namespace=common_namespace,
+        parameters=[{'use_sim_time': True}],
+        remappings=[('odom', '/bluerov2/odom'), ('twist', '/bluerov2/dvl/twist')]
     )
     
-    # Il tuo nodo che simula una misura di posizione (MLAT)
     mlat_node = Node(
         package=pkg_name,
-        executable='mlat_node',
+        executable='odom_to_mlat',
         name='mlat_node',
-        parameters=[
-            use_sim_time_param,
-            {'noise_std_dev': 0.15}
-        ]
+        namespace=common_namespace,
+        parameters=[{'use_sim_time': True}, {'noise_std_dev': 0.15}],
+        remappings=[('odom', '/bluerov2/odom'), ('pose', '/bluerov2/mlat/pose')]
     )
 
-    # --- Nodo di Stima dal Pacchetto robot_localization ---
-    ukf_filter_node = Node(
+    # --- Nodo di Stima UKF (con parametri passati come singolo dizionario) ---
+    ukf_node = Node(
         package='robot_localization',
         executable='ukf_node',
-        name='ukf_filter_node',
+        name='ukf_node',
+        namespace=common_namespace,
         output='screen',
-        parameters=[config_file, use_sim_time_param],
+        # --- MODIFICA CHIAVE ---
+        # Passiamo la lista contenente il nostro singolo e completo dizionario di parametri
+        parameters=[params],
         remappings=[
-            ('/odometry/filtered', 'odom_estim')
+            ('/bluerov2/odometry/filtered', '/bluerov2/ukf/odom')
         ]
     )
 
-    # ====================================================================================
-    # --- MODIFICA: Aggiunta dei Publisher per le Trasformazioni Statiche (TF) ---
-    # Questi nodi risolvono il problema dei frame_id degli IMU.
-    # Assumiamo che i sensori siano montati al centro del base_link (offset x,y,z = 0,0,0).
-    # Se così non fosse, aggiungi gli argomenti --x, --y, --z, etc.
-    # ====================================================================================
-
-    # Trasformazione per il primo IMU (MPU)
+    # ... definizioni dei nodi static_tf (invariate) ...
     static_tf_mpu_node = Node(
         package='tf2_ros',
         executable='static_transform_publisher',
         name='static_transform_publisher_mpu',
-        parameters=[use_sim_time_param],
+        parameters=[{'use_sim_time': True}],
         arguments=['--frame-id', 'bluerov2/base_link', '--child-frame-id', 'bluerov2/bluerov2/base_link/mpu_imu']
     )
-
-    # Trasformazione per il secondo IMU (LSM)
     static_tf_lsm_node = Node(
         package='tf2_ros',
         executable='static_transform_publisher',
         name='static_transform_publisher_lsm',
-        parameters=[use_sim_time_param],
+        parameters=[{'use_sim_time': True}],
         arguments=['--frame-id', 'bluerov2/base_link', '--child-frame-id', 'bluerov2/bluerov2/base_link/lsm_imu']
     )
 
-
     return LaunchDescription([
-        # Avviamo i due publisher TF, i tuoi simulatori e il filtro.
         static_tf_mpu_node,
         static_tf_lsm_node,
-        odom_to_dvl_node,
+        dvl_node,
         mlat_node,
-        ukf_filter_node
+        ukf_node
     ])

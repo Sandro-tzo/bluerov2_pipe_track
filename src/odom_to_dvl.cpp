@@ -29,16 +29,15 @@ using std::placeholders::_1;
 
 // --- Implementazione della Classe del Nodo ---
 OdomToDvlNode::OdomToDvlNode()
-: Node("odom_to_dvl_node")
+: Node("dvl_node")
 {
   subscription_ = this->create_subscription<nav_msgs::msg::Odometry>(
     "odom", 10, std::bind(&OdomToDvlNode::odom_callback, this, _1));
     
   publisher_ = this->create_publisher<geometry_msgs::msg::TwistWithCovarianceStamped>(
-    "/bluerov2/dvl", 10);
+    "twist", 10);
 
-  RCLCPP_INFO(this->get_logger(), "Nodo odom_to_dvl avviato.");
-  RCLCPP_INFO(this->get_logger(), "Sottoscritto a /odom, pubblica su /bluerov2/dvl");
+  RCLCPP_INFO(this->get_logger(), "Nodo 'dvl_node' avviato.");
 }
 
 void OdomToDvlNode::odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg)

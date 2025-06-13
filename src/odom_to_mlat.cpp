@@ -15,14 +15,14 @@ public:
     // Inizializziamo il generatore di rumore
     normal_distribution_ = std::normal_distribution<double>(0.0, noise_std_dev_);
 
-    // Creiamo il publisher per la nostra posa simulata
-    publisher_ = this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("/bluerov2/mlat", 10);
-
-    // Ci iscriviamo all'odometria di Gazebo per avere la posizione di ground truth da "sporcare"
+    // Subscriber con topic relativo "odom"
     subscription_ = this->create_subscription<nav_msgs::msg::Odometry>(
-      "/bluerov2/odom", 10, std::bind(&MlatNode::odom_callback, this, std::placeholders::_1));
+      "odom", 10, std::bind(&MlatNode::odom_callback, this, std::placeholders::_1));
 
-    RCLCPP_INFO(this->get_logger(), "Nodo 'mlat_node' avviato. Pubblica PoseWithCovarianceStamped nel frame 'map'.");
+    // Publisher con topic relativo "pose"
+    publisher_ = this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("pose", 10);
+
+    RCLCPP_INFO(this->get_logger(), "Nodo 'mlat_node' avviato.");
   }
 
 private:
