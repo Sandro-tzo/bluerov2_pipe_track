@@ -1,6 +1,7 @@
 ukf_node:
   ros__parameters:
 
+    # --- Parametri Generali ---
     frequency: 20.0
     sensor_timeout: 0.1
     transform_timeout: 0.1
@@ -8,6 +9,7 @@ ukf_node:
     two_d_mode: false
     publish_tf: true
 
+    # --- Nomi dei Frame ---
     map_frame: map
     odom_frame: odom
     base_link_frame: bluerov2/base_link
@@ -15,37 +17,52 @@ ukf_node:
 
     # --- IMU 0 (PRIMARIO: Orientamento + Velocità Angolari) ---
     imu0: /bluerov2/mpu
-    imu0_config: [false, false, false, true,  true,  false, false, false, false, true,  true,  true, false, false, false]
+    imu0_config: [false, false, false,  # X, Y, Z
+                  true,  true,  false,  # Roll, Pitch, Yaw
+                  false, false, false,  # VX, VY, VZ
+                  true,  true,  true,   # Vroll, Vpitch, Vyaw
+                  false, false, false]  # AX, AY, AZ
     imu0_relative: false
     imu0_queue_size: 5
 
     # --- IMU 1 (SECONDARIO: SOLO Velocità Angolari) ---
     imu1: /bluerov2/lsm
-    imu1_config: [false, false, false, false, false, false, false, false, false, true,  true,  true, false, false, false]
+    imu1_config: [false, false, false,
+                  false, false, false,
+                  false, false, false,
+                  true,  true,  true,
+                  false, false, false]
     imu1_relative: true
     imu1_queue_size: 5
 
     # --- DVL (Velocità Lineare) ---
     twist0: /bluerov2/dvl/twist
-    twist0_config: [false, false, false, false, false, false, true, true, true, false, false, false, false, false, false]
+    twist0_config: [false, false, false,
+                    false, false, false,
+                    true,  true,  true,
+                    false, false, false,
+                    false, false, false]
     twist0_relative: true
     twist0_queue_size: 5
 
     # --- MLAT (Posizione Assoluta) ---
     pose0: /bluerov2/mlat/pose
-    pose0_config: [true, true, true, false, false, false, false, false, false, false, false, false, false, false, false]
+    pose0_config: [true,  true,  true,
+                   false, false, false,
+                   false, false, false,
+                   false, false, false,
+                   false, false, false]
     pose0_differential: false
     pose0_queue_size: 2
 
-    # --- COVARIANZE ---
-    # Scritte in formato multi-riga per garantire la corretta interpretazione.
-    # I valori sulla diagonale (varianze) per le misure che usiamo devono essere > 0.
+    # --- COVARIANZE DELLE MISURE ---
+    # (Lasciate invariate per ora)
     imu0_pose_covariance: [
       999.0, 0.0,   0.0,   0.0,   0.0,   0.0,
       0.0,   999.0, 0.0,   0.0,   0.0,   0.0,
       0.0,   0.0,   999.0, 0.0,   0.0,   0.0,
-      0.0,   0.0,   0.0,   0.02,  0.0,   0.0,   # var(Roll)  > 0
-      0.0,   0.0,   0.0,   0.0,   0.02,  0.0,   # var(Pitch) > 0
+      0.0,   0.0,   0.0,   0.02,  0.0,   0.0,    # var(Roll)
+      0.0,   0.0,   0.0,   0.0,   0.02,  0.0,    # var(Pitch)
       0.0,   0.0,   0.0,   0.0,   0.0,   999.0
     ]
     imu0_twist_covariance: [
@@ -92,21 +109,25 @@ ukf_node:
       0.0,   0.0,   0.0,   0.0,   0.0,   999.0
     ]
 
-    # --- Matrice di Rumore di Processo ---
+    # --- Matrice di Rumore di Processo (MODIFICATA PER UNA STIMA PIÙ STABILE) ---
+    # I valori sulla diagonale sono stati ridotti di un fattore 10 per aumentare
+    # la fiducia del filtro nel suo modello di previsione e smorzare il rumore
+    # delle misure, risultando in una stima più fluida.
     process_noise_covariance: [
-      0.05, 0.0,  0.0,  0.0,  0.0,  0.0,  0.0,   0.0,  0.0,  0.0,   0.0,  0.0,   0.0,  0.0,  0.0,
-      0.0,  0.05, 0.0,  0.0,  0.0,  0.0,  0.0,   0.0,  0.0,  0.0,   0.0,  0.0,   0.0,  0.0,  0.0,
-      0.0,  0.0,  0.06, 0.0,  0.0,  0.0,  0.0,   0.0,  0.0,  0.0,   0.0,  0.0,   0.0,  0.0,  0.0,
-      0.0,  0.0,  0.0,  0.03, 0.0,  0.0,  0.0,   0.0,  0.0,  0.0,   0.0,  0.0,   0.0,  0.0,  0.0,
-      0.0,  0.0,  0.0,  0.0,  0.03, 0.0,  0.0,   0.0,  0.0,  0.0,   0.0,  0.0,   0.0,  0.0,  0.0,
-      0.0,  0.0,  0.0,  0.0,  0.0,  0.06, 0.0,   0.0,  0.0,  0.0,   0.0,  0.0,   0.0,  0.0,  0.0,
-      0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.25,  0.0,  0.0,  0.0,   0.0,  0.0,   0.0,  0.0,  0.0,
-      0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,   0.25, 0.0,  0.0,   0.0,  0.0,   0.0,  0.0,  0.0,
-      0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,   0.0,  0.25, 0.0,   0.0,  0.0,   0.0,  0.0,  0.0,
-      0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,   0.0,  0.0,  0.01,  0.0,  0.0,   0.0,  0.0,  0.0,
-      0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,   0.0,  0.0,  0.0,   0.01, 0.0,   0.0,  0.0,  0.0,
-      0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,   0.0,  0.0,  0.0,   0.0,  0.02,  0.0,  0.0,  0.0,
-      0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,   0.0,  0.0,  0.0,   0.0,  0.0,   0.01, 0.0,  0.0,
-      0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,   0.0,  0.0,  0.0,   0.0,  0.0,   0.0,  0.01, 0.0,
-      0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,   0.0,  0.0,  0.0,   0.0,  0.0,   0.0,  0.0,  0.015
+    # X,     Y,     Z,     R,     P,     Y,     VX,    VY,    VZ,    VR,    VP,    VY,    AX,    AY,    AZ
+      0.005, 0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
+      0.0,   0.005, 0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
+      0.0,   0.0,   0.006, 0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
+      0.0,   0.0,   0.0,   0.003, 0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
+      0.0,   0.0,   0.0,   0.0,   0.003, 0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
+      0.0,   0.0,   0.0,   0.0,   0.0,   0.006, 0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
+      0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.025, 0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
+      0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.025, 0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
+      0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.025, 0.0,   0.0,   0.0,   0.0,   0.0,   0.0,
+      0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.001, 0.0,   0.0,   0.0,   0.0,   0.0,
+      0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.001, 0.0,   0.0,   0.0,   0.0,
+      0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.002, 0.0,   0.0,   0.0,
+      0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.001, 0.0,   0.0,
+      0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.001, 0.0,
+      0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0015
     ]
