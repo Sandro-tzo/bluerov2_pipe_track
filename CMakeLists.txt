@@ -22,7 +22,6 @@ ament_auto_add_executable(image_saver src/image_saver.cpp)
 ament_auto_add_executable(pipe_detector src/pipe_detector.cpp)
 ament_auto_add_executable(pipe_tracker src/pipe_tracker.cpp)
 
-ament_auto_add_executable(odom_to_tf src/odom_to_tf.cpp)
 ament_auto_add_executable(odom_to_dvl src/odom_to_dvl.cpp)
 ament_auto_add_executable(odom_to_mlat src/odom_to_mlat.cpp)
 
