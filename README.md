@@ -9,7 +9,7 @@ Il sistema è basato su una macchina a stati finiti che gestisce la logica della
 -   **Simulazione in Gazebo**: Ambiente sottomarino con una pipeline da seguire.
 -   **Rilevamento della Pipeline**: Nodo di visione computerizzata per rilevare la linea scura della pipeline in un'immagine.
 -   **Stima dello Stato**: Utilizzo del pacchetto `robot_localization` con un **Unscented Kalman Filter (UKF)** per fondere i dati dei sensori simulati (IMU, DVL, MLAT).
--   **Controllo Avanzato**: Implementazione di un **controllore H-infinity** (`h2_int`) che si integra con il framework `auv_control` per il controllo di basso livello.
+-   **Controllo Avanzato**: Implementazione di un **controllore H-2** (`h2_int`) che si integra con il framework `auv_control` per il controllo di basso livello.
 -   **Macchina a Stati (FSM)**: Un nodo principale (`pipe_tracker`) che gestisce la logica della missione:
     1.  **DIVING**: Immersione alla quota operativa.
     2.  **SEARCHING**: Ricerca attiva della pipeline.
