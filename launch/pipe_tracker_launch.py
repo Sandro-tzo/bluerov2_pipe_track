@@ -31,8 +31,8 @@ def generate_launch_description():
         # Nodo Hinf Controller (nessuna modifica necessaria qui, i remapping sono generici)
         sl.node(
             package='bluerov2_pipe_track',
-            executable='hinf_int',
-            name='hinf_controller',
+            executable='h2_int',
+            name='h2_controller',
             output='screen',
             remappings=[
                 ('odom', '/bluerov2/ukf/odom'),
@@ -49,4 +49,5 @@ def generate_launch_description():
 
     return sl.launch_description()
 
+    #per far rientrare il BlueROV2 a casa
     #ros2 service call /bluerov2/autonomous_tracker/trigger_return_home std_srvs/srv/Trigger '{}'

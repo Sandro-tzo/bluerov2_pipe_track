@@ -5,7 +5,7 @@
 using namespace auv_control;
 
 // Puoi rinominare la classe se lo desideri, ad esempio HinfController
-class HinfController : public ControllerIO
+class h2controller : public ControllerIO
 {
 public:
   // Dichiarazione del tuo guadagno K.
@@ -14,7 +14,7 @@ public:
   Eigen::Matrix<double, 6, 12> K_gain_matrix_;
 
   // Costruttore
-  HinfController() : ControllerIO("hinf_controller") // Nome del nodo ROS, puoi cambiarlo
+  h2controller() : ControllerIO("h2_controller") // Nome del nodo ROS, puoi cambiarlo
   {
     // --- INIZIALIZZA QUI LA TUA MATRICE DI GUADAGNO K ---
     // Questo è il passaggio più importante. Devi inserire i valori
@@ -34,7 +34,7 @@ public:
     // k_gain_scalar_ = TUO_VALORE_SCALARE_K; // Esempio: 2.5;
 
     // È buona norma stampare un log per confermare l'inizializzazione
-    RCLCPP_INFO(this->get_logger(), "HinfController initializzato con la matrice K.");
+    RCLCPP_INFO(this->get_logger(), "H2Controller initializzato con la matrice K.");
     // std::cout << "Matrice K inizializzata:\n" << K_gain_matrix_ << std::endl; // Per debug se RCLCPP non è subito visibile
   }
 
@@ -98,7 +98,7 @@ int main(int argc, char** argv)
   rclcpp::init(argc, argv);
   // Crea e avvia il nodo del controller
   // Assicurati che il nome della classe qui corrisponda a quello che hai definito sopra
-  rclcpp::spin(std::make_shared<HinfController>());
+  rclcpp::spin(std::make_shared<h2controller>());
   rclcpp::shutdown();
   return 0;
 }

@@ -50,7 +50,7 @@ public:
         this->declare_parameter<double>("depth_tolerance", 0.5);
         this->declare_parameter<double>("constant_forward_speed", 0.5);
         this->declare_parameter<double>("yaw_correction_gain", 0.005);
-        this->declare_parameter<double>("search_yaw_velocity", 0.3);
+        this->declare_parameter<double>("search_yaw_velocity", 0.2);
         this->declare_parameter<double>("surface_depth", 0.0);
         this->declare_parameter<double>("surface_depth_tolerance", 0.5);
         this->declare_parameter<double>("home_position_tolerance", 1.0);

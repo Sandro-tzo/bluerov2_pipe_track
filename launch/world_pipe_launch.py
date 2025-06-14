@@ -80,3 +80,7 @@ def generate_launch_description():
     #    )
 
     return sl.launch_description()
+
+
+#Il comando per pubblicare una corrente oceanica di esempio
+#ros2 topic pub --once /current geometry_msgs/msg/Vector3 '{x: 0.2, y: 0.6, z: 0.05}'

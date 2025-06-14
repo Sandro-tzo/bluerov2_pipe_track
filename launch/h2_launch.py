@@ -16,8 +16,8 @@ def generate_launch_description():
 
         sl.node(
             package='bluerov2_pipe_track',  # <<< PACCHETTO del tuo HinfController
-            executable='hinf_int', # <<< ESEGUIBILE del tuo HinfController
-            name='hinf_controller',      # Nome del nodo ROS (quello che hai usato in ControllerIO("hinf_controller"))
+            executable='h2_int', # <<< ESEGUIBILE del tuo HinfController
+            name='h2_controller',      # Nome del nodo ROS (quello che hai usato in ControllerIO("hinf_controller"))
             output='screen',
             remappings=[
                 # Input Odometria per HinfController:

@@ -4,7 +4,7 @@
 // Spazio dei nomi
 using namespace auv_control;
 
-class HinfController : public ControllerIO
+class h2controller : public ControllerIO
 {
 public:
   // Matrice di guadagno
@@ -23,7 +23,7 @@ public:
   rclcpp::Time last_time_;
 
   // Costruttore
-  HinfController() : ControllerIO("hinf_controller")
+  h2controller() : ControllerIO("h2_controller")
   {
     // --- INIZIALIZZA LA TUA MATRICE DI GUADAGNO K ---
     K_gain_matrix_ <<
@@ -53,7 +53,7 @@ public:
     // Inizializza il tempo per il calcolo del dt
     last_time_ = this->now();
 
-    RCLCPP_INFO(this->get_logger(), "HinfController initializzato con limiti di saturazione.");
+    RCLCPP_INFO(this->get_logger(), "H2Controller initializzato con limiti di saturazione.");
   }
 
   Vector6d computeWrench(const Vector6d &se3_error,
@@ -104,7 +104,7 @@ public:
 int main(int argc, char** argv)
 {
   rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<HinfController>());
+  rclcpp::spin(std::make_shared<h2controller>());
   rclcpp::shutdown();
   return 0;
 }

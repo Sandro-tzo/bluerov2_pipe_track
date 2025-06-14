@@ -3,7 +3,7 @@
 <package format="3">
   <name>bluerov2_pipe_track</name>
   <version>0.0.1</version>
-  <description>Example of custom control law built on auv_control</description>
+  <description> example of pipeline tracking with Bluerov2</description>
   <maintainer email="alestozzi1@gmail.com">Alessandro Tozzo</maintainer>
   <license>Apache License 2.0</license>
 

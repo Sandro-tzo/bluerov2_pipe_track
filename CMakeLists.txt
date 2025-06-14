@@ -15,8 +15,8 @@ if(NOT CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD_REQUIRED ON)
 endif()
 
-ament_auto_add_executable(hinf src/hinf.cpp)
-ament_auto_add_executable(hinf_int src/hinf_int.cpp)
+ament_auto_add_executable(h2 src/h2.cpp)
+ament_auto_add_executable(h2_int src/h2_int.cpp)
 
 ament_auto_add_executable(image_saver src/image_saver.cpp)
 ament_auto_add_executable(pipe_detector src/pipe_detector.cpp)
@@ -27,11 +27,11 @@ ament_auto_add_executable(odom_to_mlat src/odom_to_mlat.cpp)
 
 ament_auto_add_executable(ukf_node src/ukf.cpp)
 
-target_include_directories(hinf PUBLIC include ${EIGEN3_INCLUDE_DIRS})
-target_include_directories(hinf_int PUBLIC include ${EIGEN3_INCLUDE_DIRS})
+target_include_directories(h2 PUBLIC include ${EIGEN3_INCLUDE_DIRS})
+target_include_directories(h2_int PUBLIC include ${EIGEN3_INCLUDE_DIRS})
 
-target_link_libraries(hinf ${auv_control_LIBRARIES})
-target_link_libraries(hinf_int ${auv_control_LIBRARIES})
+target_link_libraries(h2 ${auv_control_LIBRARIES})
+target_link_libraries(h2_int ${auv_control_LIBRARIES})
 
 target_link_libraries(image_saver ${OpenCV_LIBRARIES}) 
 
