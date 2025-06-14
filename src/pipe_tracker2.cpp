@@ -20,7 +20,7 @@ using TwistStampedMsg = geometry_msgs::msg::TwistStamped;
 using PoseStampedMsg = geometry_msgs::msg::PoseStamped;
 using OdometryMsg = nav_msgs::msg::Odometry;
 
-// ++ NUOVO: Macchina a stati con stato iniziale DIVING
+// Macchina a stati con stato iniziale DIVING
 enum class State {
     DIVING,
     SEARCHING,
@@ -188,7 +188,7 @@ private:
         }
     }
     
-    // -- MODIFICATO: Logica di stato con il nuovo stato iniziale DIVING
+    //
     void update_state(bool target_is_visible) {
         if (!current_odometry_.has_value() || !initial_position_.has_value()) return;
 
@@ -277,7 +277,6 @@ private:
         pose_msg->pose.orientation = current_odometry_->pose.pose.orientation;
 
         switch (current_state_) {
-            // ++ NUOVO: Comportamento per lo stato DIVING
             case State::DIVING:
             {
                 pose_msg->pose.position.x = initial_position_->x;
@@ -349,7 +348,7 @@ private:
         pose_pub_->publish(std::move(pose_msg));
     }
 
-    // -- MODIFICATO: La velocità è zero durante la discesa (DIVING)
+    // La velocità è zero durante la discesa (DIVING)
     void publish_velocity_setpoint()
     {
         auto twist_msg = std::make_unique<TwistStampedMsg>();

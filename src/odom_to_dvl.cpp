@@ -1,9 +1,9 @@
 #include <rclcpp/rclcpp.hpp>
 #include <nav_msgs/msg/odometry.hpp>
 #include <geometry_msgs/msg/twist_with_covariance_stamped.hpp>
-#include <algorithm> // Per std::fill
+#include <algorithm> 
 #include <functional>
-#include <random>    // Per la generazione di rumore gaussiano
+#include <random>  
 
 /*
  * Questo nodo si sottoscrive a un topic di odometria (/odom),
@@ -86,12 +86,11 @@ void OdomToDvlNode::odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg)
   dvl_twist_msg.twist.twist.angular.z = 0.0;
   
   // --- Covariance (Incertezza) ---
-  // Impostiamo la matrice di covarianza per comunicare al filtro (es. EKF/UKF)
+  // Impostiamo la matrice di covarianza per comunicare al filtro 
   // l'incertezza associata a queste misure.
   std::fill(dvl_twist_msg.twist.covariance.begin(), dvl_twist_msg.twist.covariance.end(), 0.0);
 
-  // Varianza per le velocità LINEARI (vx, vy, vz). Questo valore deve
-  // corrispondere alla varianza usata per generare il rumore.
+  // Varianza per le velocità LINEARI (vx, vy, vz). 
   dvl_twist_msg.twist.covariance[0]  = 1e-4; // var(vx)
   dvl_twist_msg.twist.covariance[7]  = 1e-4; // var(vy)
   dvl_twist_msg.twist.covariance[14] = 1e-4; // var(vz)

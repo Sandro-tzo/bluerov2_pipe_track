@@ -1,6 +1,6 @@
 #include <rclcpp/rclcpp.hpp>
 #include <geometry_msgs/msg/pose_with_covariance_stamped.hpp>
-#include <nav_msgs/msg/odometry.hpp> // Includiamo l'odometria per prendere la posizione reale
+#include <nav_msgs/msg/odometry.hpp> 
 #include <random>
 #include <functional>
 
@@ -32,7 +32,6 @@ private:
 
     // --- Header ---
     // ========================================================================= //
-    // --- MODIFICA CRITICA PER LA SINCRONIZZAZIONE ---
     // Invece di usare l'ora corrente, preserviamo il timestamp del messaggio
     // originale del simulatore. Questo sincronizza tutti i dati.
     pose_msg.header.stamp = msg->header.stamp;

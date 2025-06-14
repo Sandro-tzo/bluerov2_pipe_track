@@ -2,10 +2,9 @@
 #include <sensor_msgs/msg/image.hpp>
 #include <cv_bridge/cv_bridge.hpp>
 #include <opencv2/opencv.hpp>
-#include <filesystem> // Per la gestione di path e cartelle (richiede C++17)
+#include <filesystem> // Per la gestione di path e cartelle 
 #include <iomanip>    // Per std::setw e std::setfill
 
-// Usiamo un alias per il messaggio Image per scrivere meno codice
 using ImageMsg = sensor_msgs::msg::Image;
 
 class ImageSaver : public rclcpp::Node

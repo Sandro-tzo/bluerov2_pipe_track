@@ -56,7 +56,6 @@ ukf_node:
     pose0_queue_size: 2
 
     # --- COVARIANZE DELLE MISURE ---
-    # (Lasciate invariate per ora)
     imu0_pose_covariance: [
       999.0, 0.0,   0.0,   0.0,   0.0,   0.0,
       0.0,   999.0, 0.0,   0.0,   0.0,   0.0,
@@ -109,10 +108,7 @@ ukf_node:
       0.0,   0.0,   0.0,   0.0,   0.0,   999.0
     ]
 
-    # --- Matrice di Rumore di Processo (MODIFICATA PER UNA STIMA PIÙ STABILE) ---
-    # I valori sulla diagonale sono stati ridotti di un fattore 10 per aumentare
-    # la fiducia del filtro nel suo modello di previsione e smorzare il rumore
-    # delle misure, risultando in una stima più fluida.
+    # --- Matrice di Rumore di Processo 
     process_noise_covariance: [
     # X,     Y,     Z,     R,     P,     Y,     VX,    VY,    VZ,    VR,    VP,    VY,    AX,    AY,    AZ
       0.005, 0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,

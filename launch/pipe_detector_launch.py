@@ -14,7 +14,7 @@ def generate_launch_description():
     sl.declare_arg('image_topic', default_value='/bluerov2/image',
                    description='Il topic dell\'immagine a cui sottoscriversi')
 
-    # NUOVI: Argomenti per la calibrazione del detector
+    # Argomenti per la calibrazione del detector
     sl.declare_arg('hsv_v_low', default_value='0',
                    description='Valore minimo di "Value" (luminosità) per il nero in HSV')
                    
@@ -28,7 +28,6 @@ def generate_launch_description():
     with sl.group(ns=sl.arg('namespace')):
         sl.node(
             package='bluerov2_pipe_track',
-            # Assicurati che questo nome corrisponda all'eseguibile nel CMakeLists.txt
             executable='pipe_detector',
             name='pipe_detector',
             output='screen',

@@ -16,7 +16,7 @@ public:
   // Limiti per l'anti-windup dell'errore integrale
   Eigen::Matrix<double, 12, 1> integral_limits_;
 
-  // --- CORREZIONE: Usa il tipo Vector6d definito in auv_control, non Eigen ---
+  // Limiti di saturazione per lo sforzo (wrench)
   Vector6d wrench_saturation_limits_;
 
   // Per calcolare il dt dinamico
@@ -25,14 +25,14 @@ public:
   // Costruttore
   h2controller() : ControllerIO("h2_controller")
   {
-    // --- INIZIALIZZA LA TUA MATRICE DI GUADAGNO K ---
+    // ---MATRICE DI GUADAGNO K ---
     K_gain_matrix_ <<
     -42.92, 0.01, -0.02, -0.00, 0.00, 0.00, -39.44, 0.02, -0.03, 0.01, 0.00, -0.00, -88.62, 0.03, -0.03, -0.05, 0.10, 0.01, -113.34, 0.04, -0.02, -0.03, 1.34, -0.00, 0.01, -42.36, 0.02, -0.10, 0.00, 0.00, 0.04, -41.15, -0.02, -0.15, -0.00, 0.00, 0.02, -90.24, 0.03, -0.28, 0.00, -0.00, 0.04, -111.75, 0.01, -0.24, -0.00, 0.00, -0.01, 0.01, -42.09, 0.01, 0.00, 0.01, -0.01, -0.01, -40.52, -0.02, 0.00, -0.01, -0.02, 0.01, -89.24, 0.01, 0.00, 0.00, -0.02, 0.01, -102.23, 0.00, 0.00, 0.00, -0.01, -0.08, -0.00, -36.29, 0.00, 0.00, -0.01, -0.12, -0.02, -28.90, 0.00, -0.00, -0.01, -0.25, 0.01, -71.34, 0.00, 0.01, -0.01, -0.18, -0.01, -90.57, 0.00, 0.00, -3.85, -0.02, -0.00, -0.02, -0.00, 0.00, -3.01, -0.02, 0.00, 0.00, -0.00, -0.01, -7.03, -0.03, -0.01, -0.00, -2.84, 0.00, -8.88, -0.02, -0.01, -0.00, -0.04, -0.01, -0.00, -0.00, -0.01, -0.00, -0.00, -35.89, -0.00, 0.00, -0.00, -0.00, -0.00, -28.90, -0.00, 0.00, -0.01, 0.00, -0.00, -68.56, -0.00, 0.01, -0.01, -0.00, 0.00, -97.47;
 
     // Inizializza l'errore integrale a zero
     int_error_.setZero();
     
-    // IMPOSTA I LIMITI PER L'ANTI-WINDUP (da tarare)
+    // IMPOSTA I LIMITI PER L'ANTI-WINDUP 
     double pos_int_limit = 10.0;
     double orient_int_limit = 5.0;
     double vel_int_limit = 10.0;
@@ -41,7 +41,7 @@ public:
                         vel_int_limit, vel_int_limit, vel_int_limit, ang_vel_int_limit, ang_vel_int_limit, ang_vel_int_limit;
 
     // INIZIALIZZA I LIMITI DI SATURAZIONE DELLO SFORZO
-    // Valori presi dal file YAML per `u_sat` in ordine [x, y, z, roll, pitch, yaw]
+    // Valori presi dal file YAML cascaded_pid.yaml del pacchetto bluerov2_control
     wrench_saturation_limits_ <<
       113.137,  // x (Forza su surge)
       113.137,  // y (Forza su sway)
@@ -70,7 +70,7 @@ public:
       return Vector6d::Zero();
     }
 
-    // 2. Definisci il vettore di errore proporzionale
+    // 2. vettore di errore proporzionale
     Vector6d velocity_error = vel_setpoint - vel;
     Eigen::Matrix<double, 12, 1> proportional_error;
     proportional_error << -se3_error, -velocity_error;

@@ -4,7 +4,6 @@
 #include <opencv2/opencv.hpp>
 #include <iomanip> // Per std::setw e std::setfill
 
-// Usiamo un alias per il messaggio Image per scrivere meno codice
 using ImageMsg = sensor_msgs::msg::Image;
 
 class CylinderDetector : public rclcpp::Node
@@ -18,7 +17,7 @@ public:
     // Parametri per il rilevamento del colore nero in HSV
     // Il nero è definito da un basso valore di 'Value' (luminosità).
     this->declare_parameter<int>("hsv_v_low", 0);
-    this->declare_parameter<int>("hsv_v_high", 50); // Valore da calibrare, 50 è un buon punto di partenza
+    this->declare_parameter<int>("hsv_v_high", 50); 
     this->declare_parameter<int>("min_area", 1000); // Area minima in pixel per considerare un oggetto valido
 
     // --- Lettura dei Parametri ---

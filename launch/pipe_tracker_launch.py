@@ -1,5 +1,3 @@
-# launch/autonomous_tracker.launch.py
-
 from simple_launch import SimpleLauncher
 
 def generate_launch_description():
@@ -10,7 +8,7 @@ def generate_launch_description():
 
     with sl.group(ns='bluerov2'):
 
-        # Nodo Tracker Autonomo: ora sa che deve pubblicare setpoint nel frame 'world'
+        # Nodo Tracker Autonomo:
         sl.node(
             package='bluerov2_pipe_track',
             executable='pipe_tracker',
@@ -28,7 +26,7 @@ def generate_launch_description():
             ]
         )
 
-        # Nodo Hinf Controller (nessuna modifica necessaria qui, i remapping sono generici)
+        # Nodo H2 Controller:
         sl.node(
             package='bluerov2_pipe_track',
             executable='h2_int',

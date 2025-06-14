@@ -2,7 +2,7 @@ import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch_ros.actions import Node
-import yaml # Assicurati di avere questo import
+import yaml 
 
 def generate_launch_description():
     
@@ -24,7 +24,7 @@ def generate_launch_description():
     # --- FASE 2: Aggiungiamo il parametro 'use_sim_time' direttamente al dizionario ---
     params['use_sim_time'] = True
 
-    # --- Nodi Simulatori (invariati) ---
+    # --- Nodi Simulatori  ---
     dvl_node = Node(
         package=pkg_name,
         executable='odom_to_dvl',
@@ -43,22 +43,20 @@ def generate_launch_description():
         remappings=[('odom', '/bluerov2/odom'), ('pose', '/bluerov2/mlat/pose')]
     )
 
-    # --- Nodo di Stima UKF (con parametri passati come singolo dizionario) ---
+    # --- Nodo di Stima UKF  ---
     ukf_node = Node(
         package='robot_localization',
         executable='ukf_node',
         name='ukf_node',
         namespace=common_namespace,
         output='screen',
-        # --- MODIFICA CHIAVE ---
-        # Passiamo la lista contenente il nostro singolo e completo dizionario di parametri
         parameters=[params],
         remappings=[
             ('/bluerov2/odometry/filtered', '/bluerov2/ukf/odom')
         ]
     )
 
-    # ... definizioni dei nodi static_tf (invariate) ...
+    # ... definizioni dei nodi static_tf  ...
     static_tf_mpu_node = Node(
         package='tf2_ros',
         executable='static_transform_publisher',
