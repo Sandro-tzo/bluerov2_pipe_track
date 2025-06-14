@@ -40,44 +40,43 @@ Questo pacchetto dipende da diversi altri pacchetti ROS 2:
 Per installare le dipendenze mancanti, esegui dal tuo workspace:
 ```bash
 rosdep install --from-paths src --ignore-src -r -y
+```
 
-Installation and Build
+## Installation and Build
 
-    Clona questo repository nella cartella src del tuo workspace ROS 2:
-    Bash
-
-cd ~/your_ros2_ws/src
-git clone [https://github.com/Sandro-tzo/bluerov2_pipe_track.git](https://github.com/Sandro-tzo/bluerov2_pipe_track.git)
-
-Torna alla radice del workspace e compila:
-Bash
-
-cd ~/your_ros2_ws
-colcon build
-
-Esegui il source del workspace per rendere i pacchetti disponibili:
-Bash
-
+1.  Clona questo repository nella cartella `src` del tuo workspace ROS 2:
+    ```bash
+    cd ~/your_ros2_ws/src
+    git clone https://github.com/Sandro-tzo/bluerov2_pipe_track.git
+    ```
+2.  Torna alla radice del workspace e compila:
+    ```bash
+    cd ~/your_ros2_ws
+    colcon build
+    ```
+3.  Esegui il source del workspace per rendere i pacchetti disponibili:
+    ```bash
     source install/setup.bash
+    ```
 
-Usage
+## Usage
 
-    Avviare la Simulazione Completa:
+1.  **Avviare la Simulazione Completa**:
     Per avviare l'ambiente Gazebo, i nodi di controllo, stima e il tracker, lancia il file di lancio principale:
-    Bash
+    ```bash
+    ros2 launch bluerov2_pipe_track world_pipe_launch.py
+    ros2 launch bluerov2_pipe_track ukf_launch.py
+    ros2 launch bluerov2_pipe_track pipe_tracker_launch.py
+    ```
 
-ros2 launch bluerov2_pipe_track nome_del_tuo_file_di_lancio.py
-
-Nota: Sostituisci nome_del_tuo_file_di_lancio.py con il nome reale del tuo file se è diverso.
-
-Comandare il Rientro a Casa:
-Mentre la simulazione è in esecuzione, per terminare la missione e far tornare il robot al punto di partenza, apri un nuovo terminale (eseguendo prima il source) e chiama il servizio dedicato:
-Bash
-
+2.  **Comandare il Rientro a Casa**:
+    Mentre la simulazione è in esecuzione, per terminare la missione e far tornare il robot al punto di partenza, apri un nuovo terminale (eseguendo prima il `source`) e chiama il servizio dedicato:
+    ```bash
     ros2 service call /bluerov2/autonomous_tracker/trigger_return_home std_srvs/srv/Trigger '{}'
+    ```
 
-Node Configuration
+## Node Configuration
 
-    UKF: I parametri del filtro (matrici di covarianza, sensori da usare, etc.) sono definiti in config/ukf_bluerov.yaml.
-    Controller H-infinity: La matrice di guadagno K è definita direttamente nel codice sorgente src/h2_int.cpp.
-    Tracker: I parametri della missione (profondità, velocità, soglie di visione) sono configurati direttamente nel file di lancio.
+-   **UKF**: I parametri del filtro (matrici di covarianza, sensori da usare, etc.) sono definiti in `config/ukf_bluerov.yaml`.
+-   **Controller H-2**: La matrice di guadagno `K` è definita direttamente nel codice sorgente `src/h2_int.cpp`.
+-   **Tracker**: I parametri della missione (profondità, velocità, soglie di visione) sono configurati direttamente nel file di lancio.
