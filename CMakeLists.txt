@@ -25,8 +25,6 @@ ament_auto_add_executable(pipe_tracker src/pipe_tracker.cpp)
 ament_auto_add_executable(odom_to_dvl src/odom_to_dvl.cpp)
 ament_auto_add_executable(odom_to_mlat src/odom_to_mlat.cpp)
 
-ament_auto_add_executable(ukf_node src/ukf.cpp)
-
 target_include_directories(h2 PUBLIC include ${EIGEN3_INCLUDE_DIRS})
 target_include_directories(h2_int PUBLIC include ${EIGEN3_INCLUDE_DIRS})
 
@@ -34,8 +32,6 @@ target_link_libraries(h2 ${auv_control_LIBRARIES})
 target_link_libraries(h2_int ${auv_control_LIBRARIES})
 
 target_link_libraries(image_saver ${OpenCV_LIBRARIES}) 
-
-target_link_libraries(ukf_node Eigen3::Eigen)
 
 install(DIRECTORY launch config urdf
   DESTINATION share/${PROJECT_NAME})
