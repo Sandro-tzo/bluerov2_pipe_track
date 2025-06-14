@@ -1,82 +1,87 @@
-# BlueROV2 - Missione di Ispezione Pipeline (Pipe Tracking)
+# BlueROV2 - Pipeline Inspection Mission (Pipe Tracking)
 
-Questo repository contiene un progetto completo in ROS 2 per la simulazione di una missione di ispezione di una pipeline sottomarina con un AUV di tipo BlueROV2. Il progetto dimostra uno stack di autonomia completo che include percezione, stima dello stato e controllo avanzato.
+This repository contains a complete ROS 2 project for simulating a subsea pipeline inspection mission with a BlueROV2-type AUV. The project demonstrates a full autonomy stack, including perception, state estimation, and advanced control.
 
-Il sistema è basato su una macchina a stati finiti che gestisce la logica della missione, un filtro UKF per la stima della posa e un controllore H-infinity custom per il tracciamento della traiettoria.
+The system is based on a finite state machine (FSM) that manages the mission logic, a UKF for pose estimation, and a custom H-2 controller for trajectory tracking.
 
 ## Key Features
 
--   **Simulazione in Gazebo**: Ambiente sottomarino con una pipeline da seguire.
--   **Rilevamento della Pipeline**: Nodo di visione computerizzata per rilevare la linea scura della pipeline in un'immagine.
--   **Stima dello Stato**: Utilizzo del pacchetto `robot_localization` con un **Unscented Kalman Filter (UKF)** per fondere i dati dei sensori simulati (IMU, DVL, MLAT).
--   **Controllo Avanzato**: Implementazione di un **controllore H-2** (`h2_int`) che si integra con il framework `auv_control` per il controllo di basso livello.
--   **Macchina a Stati (FSM)**: Un nodo principale (`pipe_tracker`) che gestisce la logica della missione:
-    1.  **DIVING**: Immersione alla quota operativa.
-    2.  **SEARCHING**: Ricerca attiva della pipeline.
-    3.  **TRACKING**: Inseguimento della pipeline una volta rilevata.
-    4.  **RETURN TO HOME**: Sequenza di rientro manuale (emersione e ritorno al punto di partenza).
--   **Supervisione Manuale**: Possibilità per l'operatore di terminare la missione e avviare la sequenza di rientro tramite un servizio ROS 2.
+-   **Gazebo Simulation**: Underwater environment with a pipeline to follow.
+-   **Pipeline Detection**: Computer vision node to detect the pipeline's dark line in an image stream.
+-   **State Estimation**: Utilizes the `robot_localization` package with an **Unscented Kalman Filter (UKF)** to fuse simulated sensor data (IMU, DVL, MLAT).
+-   **Advanced Control**: Implements a custom **H-2 controller** (`h2_int`) integrated with the `auv_control` framework for low-level control.
+-   **Finite State Machine (FSM)**: A main node (`pipe_tracker`) manages the mission logic through several states:
+    1.  **DIVING**: Dives to the operational depth.
+    2.  **SEARCHING**: Actively searches for the pipeline.
+    3.  **TRACKING**: Tracks the pipeline once detected.
+    4.  **RETURN TO HOME**: Executes a manual return sequence (surfacing and returning to the start point).
+-   **Manual Supervision**: Allows the operator to end the mission and initiate the return sequence via a ROS 2 service.
 
 ## System Architecture
 
-Il flusso dei dati nel sistema è il seguente:
-1.  **Gazebo** simula l'ambiente, la fisica del BlueROV2 e genera dati di odometria "ground truth".
-2.  I nodi **sensori simulati** (`odom_to_dvl`, `odom_to_mlat`) e i bridge di Gazebo producono topic di sensori realistici (IMU, DVL, MLAT) a partire dai dati di Gazebo.
-3.  Il nodo **UKF** (`robot_localization`) fonde questi dati per produrre una stima dell'odometria filtrata e robusta (`/bluerov2/ukf/odom`).
-4.  Il nodo **Tracker** (`pipe_tracker`) utilizza l'**odometria filtrata** e i dati della **telecamera** per eseguire la sua logica. In base allo stato corrente (es. `TRACKING`), calcola e pubblica i setpoint di posa (`cmd_pose`) e velocità (`cmd_vel`).
-5.  Il nodo **Controllore** (`h2_controller`) riceve i setpoint e lo stato attuale, e calcola lo sforzo richiesto (`wrench`) per raggiungere l'obiettivo.
-6.  Il **Thruster Manager** riceve il comando di `wrench` e lo converte in comandi di spinta per i singoli propulsori del BlueROV2 in Gazebo.
+The data flow in the system is as follows:
+1.  **Gazebo** simulates the environment, vehicle physics, and generates ground truth odometry.
+2.  **Simulated Sensor Nodes** (`odom_to_dvl`, `odom_to_mlat`) and Gazebo bridges produce realistic sensor topics from ground truth data.
+3.  The **UKF node** (`robot_localization`) fuses sensor data to produce a robust, filtered odometry estimate (`/bluerov2/ukf/odom`).
+4.  The **Tracker node** (`pipe_tracker`) uses the filtered odometry and camera data to execute its state machine logic, publishing pose (`cmd_pose`) and velocity (`cmd_vel`) setpoints.
+5.  The **Controller node** (`h2_controller`) receives the setpoints and current state, and calculates the required wrench (forces and torques).
+6.  The **Thruster Manager** receives the wrench command and converts it into individual thrust commands for the simulated thrusters.
 
 ## Dependencies
 
-Questo pacchetto dipende da diversi altri pacchetti ROS 2:
+This package depends on several other ROS 2 packages:
 
--   **`robot_localization`**: Per il filtro UKF.
--   **`auv_control`**: Per la libreria di base del controllore.
--   **`thruster_manager`**: Per l'allocazione della spinta.
--   **`bluerov2_description`**: Per il modello URDF del robot.
--   **`simple_launch`**: Per la gestione semplificata dei file di lancio.
+-   **`robot_localization`**: For the UKF filter.
+-   **`auv_control`**: For the base controller library.
+-   **`thruster_manager`**: For thrust allocation.
+-   **`bluerov2_description`**: For the robot's URDF model.
+-   **`simple_launch`**: For simplified management of launch files.
 
-Per installare le dipendenze mancanti, esegui dal tuo workspace:
+To install missing dependencies from your workspace `src` folder, run:
 ```bash
 rosdep install --from-paths src --ignore-src -r -y
 ```
 
 ## Installation and Build
 
-1.  Clona questo repository nella cartella `src` del tuo workspace ROS 2:
+1.  Clone the repository into your ROS 2 workspace:
     ```bash
     cd ~/your_ros2_ws/src
-    git clone https://github.com/Sandro-tzo/bluerov2_pipe_track.git
+    git clone [https://github.com/Sandro-tzo/bluerov2_pipe_track.git](https://github.com/Sandro-tzo/bluerov2_pipe_track.git)
     ```
-2.  Torna alla radice del workspace e compila:
+2.  Return to the workspace root and build the packages:
     ```bash
     cd ~/your_ros2_ws
     colcon build
     ```
-3.  Esegui il source del workspace per rendere i pacchetti disponibili:
+3.  Source the workspace to make the packages available:
     ```bash
     source install/setup.bash
     ```
 
 ## Usage
 
-1.  **Avviare la Simulazione Completa**:
-    Per avviare l'ambiente Gazebo, i nodi di controllo, stima e il tracker, lancia il file di lancio principale:
+1.  **Launch the Full Simulation**:
+    To launch the Gazebo environment and all required nodes, run the main launch files. It's recommended to run each in a separate terminal to see the specific logs:
     ```bash
+    # Terminal 1: Launch the world and robot model
     ros2 launch bluerov2_pipe_track world_pipe_launch.py
+    
+    # Terminal 2: Launch the estimation (UKF) and sensor simulator nodes
     ros2 launch bluerov2_pipe_track ukf_launch.py
+    
+    # Terminal 3: Launch the mission logic and controller
     ros2 launch bluerov2_pipe_track pipe_tracker_launch.py
     ```
 
-2.  **Comandare il Rientro a Casa**:
-    Mentre la simulazione è in esecuzione, per terminare la missione e far tornare il robot al punto di partenza, apri un nuovo terminale (eseguendo prima il `source`) e chiama il servizio dedicato:
+2.  **Command Return to Home**:
+    While the simulation is running, to manually trigger the return sequence, open a new terminal (after sourcing the workspace) and call the service:
     ```bash
     ros2 service call /bluerov2/autonomous_tracker/trigger_return_home std_srvs/srv/Trigger '{}'
     ```
 
 ## Node Configuration
 
--   **UKF**: I parametri del filtro (matrici di covarianza, sensori da usare, etc.) sono definiti in `config/ukf_bluerov.yaml`.
--   **Controller H-2**: La matrice di guadagno `K` è definita direttamente nel codice sorgente `src/h2_int.cpp`.
--   **Tracker**: I parametri della missione (profondità, velocità, soglie di visione) sono configurati direttamente nel file di lancio.
+-   **UKF**: Filter parameters (covariance matrices, sensor configuration, etc.) are defined in `config/ukf_bluerov.yaml`.
+-   **H-2 Controller**: The gain matrix `K` is hard-coded in the source file `src/h2_int.cpp`.
+-   **Tracker**: Mission parameters (depth, speed, vision thresholds) are set in the launch file `launch/pipe_tracker_launch.py`.
