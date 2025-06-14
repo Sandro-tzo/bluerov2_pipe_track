@@ -47,7 +47,7 @@ rosdep install --from-paths src --ignore-src -r -y
 1.  Clone the repository into your ROS 2 workspace:
     ```bash
     cd ~/your_ros2_ws/src
-    git clone [https://github.com/Sandro-tzo/bluerov2_pipe_track.git](https://github.com/Sandro-tzo/bluerov2_pipe_track.git)
+    git clone https://github.com/Sandro-tzo/bluerov2_pipe_track.git
     ```
 2.  Return to the workspace root and build the packages:
     ```bash
