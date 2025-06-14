@@ -37,24 +37,24 @@ public:
     AutonomousCylinderTracker() : Node("autonomous_cylinder_tracker")
     {
         // Parametri
-        this->declare_parameter<std::string>("image_topic", "/bluerov2/image");
-        this->declare_parameter<int>("hsv_v_low", 0);
-        this->declare_parameter<int>("hsv_v_high", 50);
-        this->declare_parameter<int>("min_area", 5000);
-        this->declare_parameter<std::string>("velocity_setpoint_topic", "tracker/cmd_vel");
-        this->declare_parameter<std::string>("pose_setpoint_topic", "tracker/cmd_pose");
-        this->declare_parameter<std::string>("odom_topic", "/bluerov2/odom");
-        this->declare_parameter<std::string>("robot_frame_id", "bluerov2/base_link");
-        this->declare_parameter<std::string>("world_frame_id", "world");
-        this->declare_parameter<double>("depth_setpoint", -8.0);
-        this->declare_parameter<double>("depth_tolerance", 0.5);
-        this->declare_parameter<double>("constant_forward_speed", 0.5);
-        this->declare_parameter<double>("yaw_correction_gain", 0.005);
-        this->declare_parameter<double>("search_yaw_velocity", 0.2);
-        this->declare_parameter<double>("surface_depth", 0.0);
-        this->declare_parameter<double>("surface_depth_tolerance", 0.5);
-        this->declare_parameter<double>("home_position_tolerance", 1.0);
-        this->declare_parameter<double>("return_home_step_size_m", 1.5);
+        this->declare_parameter<std::string>("image_topic");
+        this->declare_parameter<int>("hsv_v_low");
+        this->declare_parameter<int>("hsv_v_high");
+        this->declare_parameter<int>("min_area");
+        this->declare_parameter<std::string>("velocity_setpoint_topic");
+        this->declare_parameter<std::string>("pose_setpoint_topic");
+        this->declare_parameter<std::string>("odom_topic");
+        this->declare_parameter<std::string>("robot_frame_id");
+        this->declare_parameter<std::string>("world_frame_id");
+        this->declare_parameter<double>("depth_setpoint");
+        this->declare_parameter<double>("depth_tolerance");
+        this->declare_parameter<double>("constant_forward_speed");
+        this->declare_parameter<double>("yaw_correction_gain");
+        this->declare_parameter<double>("search_yaw_velocity");
+        this->declare_parameter<double>("surface_depth");
+        this->declare_parameter<double>("surface_depth_tolerance");
+        this->declare_parameter<double>("home_position_tolerance");
+        this->declare_parameter<double>("return_home_step_size_m");
 
         // Sottoscrizioni, Pubblicazioni e Servizio
         auto sensor_qos = rclcpp::QoS(rclcpp::KeepLast(5)).best_effort();
