@@ -81,7 +81,7 @@ rosdep install --from-paths src --ignore-src -r -y
     ```
 
 2.  **Simulate an Ocean Current (Optional)**:
-    To simulate an example ocean current affecting the vehicle, you can publish a single message to the /current topic. This is useful for testing the controller's robustness against external disturbances. In a new terminal, run:
+    To simulate an example ocean current affecting the vehicle, you can publish a single message to the `/current` topic. This is useful for testing the controller's robustness against external disturbances. In a new terminal, run:
     ```bash
     ros2 topic pub --once /current geometry_msgs/msg/Vector3 '{x: 0.2, y: 0.6, z: 0.05}'
     ```
