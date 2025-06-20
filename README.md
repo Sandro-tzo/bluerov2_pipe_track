@@ -46,6 +46,7 @@ This package depends on several other ROS 2 packages:
     ```
 2. Install missing dependencies that are not indicized by rosdep:
     ```bash
+    git clone https://github.com/oKermorgant/pose_to_tf
     git clone https://github.com/CentraleNantesROV/bluerov2.git
     git clone https://github.com/CentraleNantesROV/auv_control.git
     git clone https://github.com/CentraleNantesROV/thruster_manager.git
