@@ -31,13 +31,20 @@ The data flow in the system is as follows:
 
 This package depends on several other ROS 2 packages:
 
--   **`robot_localization`**: For the UKF filter.
+-   **`bluerov2_description`**: For the robot's URDF model.
 -   **`auv_control`**: For the base controller library.
 -   **`thruster_manager`**: For thrust allocation.
--   **`bluerov2_description`**: For the robot's URDF model.
 -   **`simple_launch`**: For simplified management of launch files.
+-   **`robot_localization`**: For the UKF filter.
 
 To install missing dependencies from your workspace `src` folder, run:
+```bash
+git clone https://github.com/CentraleNantesROV/bluerov2.git
+git clone https://github.com/CentraleNantesROV/auv_control.git
+git clone https://github.com/CentraleNantesROV/thruster_manager.git
+```
+
+Then, from your workspace root folder, run:
 ```bash
 rosdep install --from-paths src --ignore-src -r -y
 ```
