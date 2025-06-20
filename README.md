@@ -37,13 +37,6 @@ This package depends on several other ROS 2 packages:
 -   **`simple_launch`**: For simplified management of launch files.
 -   **`robot_localization`**: For the UKF filter.
 
-To install missing dependencies that are not indicized by rosdep, from your workspace `src` folder, run:
-```bash
-git clone https://github.com/CentraleNantesROV/bluerov2.git
-git clone https://github.com/CentraleNantesROV/auv_control.git
-git clone https://github.com/CentraleNantesROV/thruster_manager.git
-```
-
 ## Installation and Build
 
 1.  Clone the repository into your ROS 2 workspace:
@@ -51,13 +44,19 @@ git clone https://github.com/CentraleNantesROV/thruster_manager.git
     cd ~/your_ros2_ws/src
     git clone https://github.com/Sandro-tzo/bluerov2_pipe_track.git
     ```
-2.  Return to the workspace root and build the packages:
+2. Install missing dependencies that are not indicized by rosdep:
+    ```bash
+    git clone https://github.com/CentraleNantesROV/bluerov2.git
+    git clone https://github.com/CentraleNantesROV/auv_control.git
+    git clone https://github.com/CentraleNantesROV/thruster_manager.git
+    ```
+3.  Return to the workspace root, run rosdep and build the packages:
     ```bash
     cd ~/your_ros2_ws
     rosdep install --from-paths src --ignore-src -r -y
     colcon build
     ```
-3.  Source the workspace to make the packages available:
+4.  Source the workspace to make the packages available:
     ```bash
     source install/setup.bash
     ```
