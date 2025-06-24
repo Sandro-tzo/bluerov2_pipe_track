@@ -105,52 +105,76 @@ private:
         if (!current_odometry_.has_value()) { return; }
         
         this->target_found_ = false;
+        // Inizializza l'errore in pixel a 0.
         int pixel_error = 0;
+        // Puntatore per l'immagine convertita in formato OpenCV.
         cv_bridge::CvImagePtr cv_ptr;
 
         if (current_state_ == State::SEARCHING || current_state_ == State::TRACKING) {
             try {
+                // Converte il messaggio ROS 'ImageMsg' in un oggetto 'CvImage' di OpenCV utilizzando cv_bridge.
                 cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
                 cv::Mat &frame = cv_ptr->image;
                 int frame_width = frame.cols;
                 int frame_height = frame.rows;
                 cv::Mat hsv_frame, mask;
+                // Converte l'immagine dal formato colore BGR al formato HSV.
                 cv::cvtColor(frame, hsv_frame, cv::COLOR_BGR2HSV);
+                // Definisce i limiti inferiori e superiori per il colore nero nello spazio HSV.
                 cv::Scalar lower_black(0, 0, this->get_parameter("hsv_v_low").as_int());
                 cv::Scalar upper_black(180, 255, this->get_parameter("hsv_v_high").as_int());
+                // Crea una maschera binaria. I pixel dell'immagine che rientrano nel range [lower_black, upper_black]
+                // vengono impostati a bianco (255), tutti gli altri a nero (0).
                 cv::inRange(hsv_frame, lower_black, upper_black, mask);
+                // Trova i contorni (forme) degli oggetti bianchi presenti nella maschera binaria.
                 std::vector<std::vector<cv::Point>> contours;
                 cv::findContours(mask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+                // --- IDENTIFICAZIONE DEL CONTORNO PIÙ GRANDE ---
                 double max_area = 0;
                 std::optional<std::vector<cv::Point>> largest_contour;
+                // Legge il parametro 'min_area' per scartare i contorni troppo piccoli 
                 int min_area = this->get_parameter("min_area").as_int();
                 for (const auto& contour : contours) {
                     double area = cv::contourArea(contour);
+                    // Se l'area è maggiore della soglia minima e dell'area massima trovata finora
                     if (area > min_area && area > max_area) {
                         max_area = area;
                         largest_contour = contour;
                     }
                 }
+
+                // --- ANALISI DELLA REGIONE DI INTERESSE (ROI) INFERIORE ---
                 if (largest_contour.has_value()) {
                     cv::Rect main_bbox = cv::boundingRect(largest_contour.value());
+                    // Definisce una Regione di Interesse (ROI) nella parte inferiore del rettangolo principale.
+                    // L'altezza della ROI è il 25% dell'altezza del rettangolo principale (con un minimo di 10 pixel).
                     int roi_height = std::max(10, static_cast<int>(main_bbox.height * 0.25));
                     cv::Rect bottom_roi_rect(main_bbox.x, main_bbox.y + main_bbox.height - roi_height, main_bbox.width, roi_height);
                     bottom_roi_rect &= cv::Rect(0, 0, frame_width, frame_height);
                     cv::Mat bottom_mask_roi = mask(bottom_roi_rect);
+                    // Esegue nuovamente 'findContours', ma solo all'interno della maschera della ROI inferiore.
+                    // Questo serve a verificare la presenza di una parte specifica del target nella zona inferiore.
                     std::vector<std::vector<cv::Point>> bottom_contours;
                     cv::findContours(bottom_mask_roi, bottom_contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+                    // Se sono stati trovati contorni nella ROI inferiore
                     if (!bottom_contours.empty()) {
+                        // Unisce tutti i punti di tutti i contorni trovati nella ROI in un unico vettore.
                         std::vector<cv::Point> all_bottom_points;
                         for(const auto& c : bottom_contours) {
                             all_bottom_points.insert(all_bottom_points.end(), c.begin(), c.end());
                         }
+                        // Se ci sono punti validi dopo l'unione
                         if (!all_bottom_points.empty()) {
                             this->target_found_ = true;
                             cv::Rect final_bbox = cv::boundingRect(all_bottom_points);
+                            // Aggiusta le coordinate del rettangolo finale per riportarle nel sistema di coordinate dell'immagine completa.
                             final_bbox.x += bottom_roi_rect.x;
                             final_bbox.y += bottom_roi_rect.y;
+                            // Calcola il punto di riferimento del target come il centro del rettangolo finale.
                             cv::Point reference_point(final_bbox.x + final_bbox.width / 2, final_bbox.y + final_bbox.height / 2);
+                            // Calcola l'errore come la differenza tra il centro orizzontale dell'immagine e la coordinata x del punto di riferimento.
                             pixel_error = frame_width / 2 - reference_point.x;
+                            // Disegna sull'immagine originale
                             cv::rectangle(frame, main_bbox, cv::Scalar(0, 255, 255), 2); 
                             cv::rectangle(frame, bottom_roi_rect, cv::Scalar(255, 0, 0), 2);
                             cv::rectangle(frame, final_bbox, cv::Scalar(255, 0, 255), 2);
